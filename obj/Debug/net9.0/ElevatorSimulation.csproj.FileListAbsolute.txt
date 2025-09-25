@@ -1,0 +1,15 @@
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.GeneratedMSBuildEditorConfig.editorconfig
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.AssemblyInfoInputs.cache
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.AssemblyInfo.cs
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.csproj.CoreCompileInputs.cache
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.sourcelink.json
+/Users/smic/Documents/GitHub/ElevatorSimulation/bin/Debug/net9.0/ElevatorSimulation
+/Users/smic/Documents/GitHub/ElevatorSimulation/bin/Debug/net9.0/ElevatorSimulation.deps.json
+/Users/smic/Documents/GitHub/ElevatorSimulation/bin/Debug/net9.0/ElevatorSimulation.runtimeconfig.json
+/Users/smic/Documents/GitHub/ElevatorSimulation/bin/Debug/net9.0/ElevatorSimulation.dll
+/Users/smic/Documents/GitHub/ElevatorSimulation/bin/Debug/net9.0/ElevatorSimulation.pdb
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.dll
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/refint/ElevatorSimulation.dll
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.pdb
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ElevatorSimulation.genruntimeconfig.cache
+/Users/smic/Documents/GitHub/ElevatorSimulation/obj/Debug/net9.0/ref/ElevatorSimulation.dll

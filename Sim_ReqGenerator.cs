@@ -6,7 +6,7 @@ namespace knoxxr.Evelvator.Sim
     {
         private Timer Scheduler;
 
-        protected List<Sim_Person> Persons = new List<Sim_Person>();
+        protected List<Person> Persons = new List<Person>();
         public Sim_ReqGenerator()
         {
             Scheduler = new Timer(TimerCallback, null, 0, 500);

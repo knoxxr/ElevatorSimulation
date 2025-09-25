@@ -1,3 +1,5 @@
+using System.Reflection.Metadata;
+
 namespace knoxxr.Evelvator.Core
 {
     public class Floor
@@ -6,31 +8,38 @@ namespace knoxxr.Evelvator.Core
         public event EventHandler<FloorEventArgs> EventReqDown;
         public event EventHandler<FloorEventArgs> EventCancelUp;
         public event EventHandler<FloorEventArgs> EventCancelDown;
-        public int Height = 3;
+        public static readonly int Height = 3000; // 층당 높이 (mm)
         public readonly int myFloor;
+
+        public Button BtnUp = new Button();
+        public Button BtnDown = new Button();
 
         public Floor(int floor)
         {
             myFloor = floor;
         }
-        public void ReqUpSide(int floor)
+        public void ReqUpSide()
         {
-
+            BtnUp.Press();
+            OnReqUp(new FloorEventArgs(myFloor));
         }
 
         public void CancelUpSide()
         {
-
+            BtnUp.Cancel();
+            OnCancelUp(new FloorEventArgs(myFloor));
         }
 
-        public void ReqDownSide(int floor)
+        public void ReqDownSide()
         {
-
+            BtnDown.Press();
+            OnReqDown(new FloorEventArgs(myFloor));
         }
 
-        public void CancelDownSide(int floor)
+        public void CancelDownSide()
         {
-
+            BtnDown.Cancel();
+            OnCancelDown(new FloorEventArgs(myFloor));
         }
 
         public void OnReqUp(FloorEventArgs e)

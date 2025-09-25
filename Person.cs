@@ -1,3 +1,5 @@
+using knoxxr.Evelvator.Core;
+
 namespace knoxxr.Evelvator.Sim
 {
     public class Person
@@ -11,29 +13,44 @@ namespace knoxxr.Evelvator.Sim
         public event EventHandler<PersonEventArgs> EventWaitingElevator;
         public event EventHandler<PersonEventArgs> EventGetInElevator;
         public event EventHandler<PersonEventArgs> EventGeOffElevator;
-        public int CurFloor;
+        public Floor CurFloor;
         public int TargetFloor;
         public PersonState State = PersonState.Waiting;
-        public Person(int curFloor)
+        public Person(Floor curFloor)
         {
             CurFloor = curFloor;
         }
         public void CallUp()
         {
-            OnReqlUp();
+            if (CurFloor != null)
+            {
+                CurFloor.ReqUpSide();
+                OnReqlUp();
+            }
         }
         public void CallDown()
         {
-            OnReqlDown();
-
+            if (CurFloor != null)
+            {
+                CurFloor.ReqDownSide();
+                OnReqlDown();
+            }
         }
         public void CancelUp()
         {
-            OnCancellUp();
+            if (CurFloor != null)
+            {
+                CurFloor.CancelUpSide();
+                OnCancellUp();
+            }
         }
         public void CancelDown()
         {
-            OnCancellDown();
+            if (CurFloor != null)
+            {
+                CurFloor.CancelDownSide();
+                OnCancellDown();
+            }
         }
         public void WaitingElevator()
         {
