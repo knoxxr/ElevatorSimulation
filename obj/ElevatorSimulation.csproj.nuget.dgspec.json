@@ -1,25 +1,32 @@
 {
   "format": 1,
   "restore": {
-    "/Users/smic/Documents/GitHub/ElevatorSimulation/ElevatorSimulation.csproj": {}
+    "C:\\Users\\SMIC\\OneDrive\\문서\\GitHub\\ElevatorSimulation\\ElevatorSimulation.csproj": {}
   },
   "projects": {
-    "/Users/smic/Documents/GitHub/ElevatorSimulation/ElevatorSimulation.csproj": {
+    "C:\\Users\\SMIC\\OneDrive\\문서\\GitHub\\ElevatorSimulation\\ElevatorSimulation.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/smic/Documents/GitHub/ElevatorSimulation/ElevatorSimulation.csproj",
+        "projectUniqueName": "C:\\Users\\SMIC\\OneDrive\\문서\\GitHub\\ElevatorSimulation\\ElevatorSimulation.csproj",
         "projectName": "ElevatorSimulation",
-        "projectPath": "/Users/smic/Documents/GitHub/ElevatorSimulation/ElevatorSimulation.csproj",
-        "packagesPath": "/Users/smic/.nuget/packages/",
-        "outputPath": "/Users/smic/Documents/GitHub/ElevatorSimulation/obj/",
+        "projectPath": "C:\\Users\\SMIC\\OneDrive\\문서\\GitHub\\ElevatorSimulation\\ElevatorSimulation.csproj",
+        "packagesPath": "C:\\Users\\SMIC\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\SMIC\\OneDrive\\문서\\GitHub\\ElevatorSimulation\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "/Users/smic/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\SMIC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -38,7 +45,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net9.0": {
@@ -59,7 +66,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.202/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

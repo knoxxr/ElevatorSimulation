@@ -5,12 +5,12 @@ namespace knoxxr.Evelvator.Core
 {
     public class Building
     {
-        protected int TotalGroundFloor = 100;
-        protected int TotalUndergroundFloor = 10;
+        public static int TotalGroundFloor = 100;
+        public static int TotalUndergroundFloor = 10;
         protected int TotalElevator = 2;
         public Dictionary<int, Floor> Floors = new Dictionary<int, Floor>();
         public ElevatorManager eleMgr = new ElevatorManager();
-        public Sim_ReqGenerator simMgr = new Sim_ReqGenerator();
+        public Sim_ReqGenerator simMgr = null;
 
         public Building()
         {
@@ -21,24 +21,30 @@ namespace knoxxr.Evelvator.Core
         {
             InitBuilding();
             InitElevatorManager();
+            simMgr = new Sim_ReqGenerator(this);
         }
 
-        public void InitBuilding()
+        protected void InitSimManager()
         {
-            for (int floor = 1; floor <= TotalGroundFloor; floor++)
+        }
+        protected void InitBuilding()
+        {
+            for (int floorNo = 1; floorNo <= TotalGroundFloor; floorNo++)
             {
-                Floor newFloor = new Floor(floor);
-                Floors.Add(floor, newFloor);
+                Floor newFloor = new Floor(floorNo);
+                Floors.Add(newFloor.FloorNo, newFloor);
             }
 
-            for (int floor = 1; floor <= TotalUndergroundFloor; floor++)
+            for (int floorNo = -TotalUndergroundFloor; floorNo <= -1; floorNo++)
             {
-                Floor newFloor = new Floor(floor * -1);
-                Floors.Add(floor, newFloor);
+                Floor newFloor = new Floor(floorNo);
+                Floors.Add(newFloor.FloorNo, newFloor);
             }
+
+            Console.WriteLine($"Building initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
         }
 
-        public void InitElevatorManager()
+        protected void InitElevatorManager()
         {
             eleMgr.Initialize(Floors, TotalElevator);
         }

@@ -7,14 +7,16 @@ namespace knoxxr.Evelvator.Core
 {
     public class Elevator
     {
+        public int Id;
         public Floor CurrentFloor;
         public int MaximumOccupancy = 15;
+        public int Height = 2700; // 엘리베이터 높이 (mm)
         public ElevatorState State = ElevatorState.Idle;
 
         // === 설정 변수 ===
-        private const double MaxSpeed = 5.0; // 최대 속도 (m/s)
-        private const double Acceleration = 1.0; // 가속도 (m/s^2)
-        private const double DecelerationDistance = 2.0; // 감속 시작 거리 (m)
+        private const double MaxSpeed = 5000.0; // 최대 속도 (mm/s)
+        private const double Acceleration = 1000.0; // 가속도 (mm/s^2)
+        private const double DecelerationDistance = 2000.0; // 감속 시작 거리 (m)
         // === 상태 변수 (현재 위치 저장) ===
         public double CurrentPosition { get; private set; } = 0.0; // 현재 위치 (m)
         private double currentVelocity = 0.0; // 현재 속도 (m/s)
@@ -24,16 +26,24 @@ namespace knoxxr.Evelvator.Core
         private CancellationTokenSource cts;
         public List<Person> People = new List<Person>();
         protected List<Button> Buttons = new List<Button>();
-        public Elevator()
+        public Direction CurrentDirection = Direction.None;
+
+        public Elevator(int id)
         {
+            Id = id;
         }
-        public void Move(int targetFloor)
+        public void Move(Floor targetFloor)
         {
-            StartMove(TransFloorToPosition(targetFloor));
+            if (targetFloor == null) return;
+            if (State == ElevatorState.Moving) return;
+
+            Console.WriteLine($"[ID {Id}] / [요청] {targetFloor.FloorNo}층으로 이동 요청됨.");
+            StartMove(targetFloor.Position);
         }
 
         public void Stop()
         {
+            Console.WriteLine($"[ID {Id}] / [요청] 이동 취소 요청됨.");
             CancelMovement();
         }
 
@@ -93,6 +103,12 @@ namespace knoxxr.Evelvator.Core
                     double absRemainingDistance = Math.Abs(remainingDistance);
                     int direction = Math.Sign(remainingDistance);
 
+                    if (direction > 0)
+                        ChangeDirectionState(Direction.Up);
+                    else if (direction < 0)
+                        ChangeDirectionState(Direction.Down);
+                    else
+                        ChangeDirectionState(Direction.None);
                     // 3. 가속/감속 상태 결정
                     double distanceToStop = (currentVelocity * currentVelocity) / (2 * Acceleration);
                     bool shouldDecelerate = absRemainingDistance <= Math.Max(distanceToStop, DecelerationDistance);
@@ -136,10 +152,16 @@ namespace knoxxr.Evelvator.Core
 
                     CurrentPosition += distanceMoved;
                     currentVelocity = nextVelocity;
-                    Console.WriteLine($"[이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m");
+
+                    int curFloor = GetCurrentFloorNumber();
+
+                    Console.WriteLine($"[ID {Id}] / [이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m, 현재 층수 : {curFloor}, 방향 : {CurrentDirection.ToString()}");
                     // 5. 시뮬레이션 지연 (비동기 대기)
+
                     await Task.Delay(updateIntervalMs, cancellationToken);
                 }
+
+                ChangeDirectionState(Direction.None);
 
                 // 최종 정리
                 CurrentPosition = targetPosition;
@@ -157,6 +179,11 @@ namespace knoxxr.Evelvator.Core
             }
         }
 
+        protected void ChangeDirectionState(Direction dir)
+        {
+            CurrentDirection = dir;
+        }
+
         /// <summary>
         /// 현재 진행 중인 이동을 취소하고 가장 가까운 층으로 멈추도록 요청합니다.
         /// </summary>
@@ -168,10 +195,16 @@ namespace knoxxr.Evelvator.Core
         /// <summary>
         /// 새로운 이동을 시작하고 취소 토큰을 준비합니다.
         /// </summary>
-        protected Task StartMove(double destination)
+        protected async Task StartMove(double destination)
         {
             cts = new CancellationTokenSource();
-            return MoveElevatorAsync(destination, cts.Token);
+            await MoveElevatorAsync(destination, cts.Token);
+        }
+
+        protected int GetCurrentFloorNumber()
+        {
+            // CurrentPosition / FloorHeight 계산 후 반올림하여 층 번호(1층부터 시작)를 얻습니다.
+            return (int)Math.Round(CurrentPosition / Floor.Height) + 1;
         }
     }
 
@@ -180,6 +213,13 @@ namespace knoxxr.Evelvator.Core
         Idle,
         Moving,
         Faulted,
+    }
+
+    public enum Direction
+    {
+        Up,
+        Down,
+        None
     }
     public class Button()
     {
