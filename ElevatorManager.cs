@@ -84,7 +84,16 @@ namespace knoxxr.Evelvator.Core
                     switch (req.ReqType)
                     {
                         case RequestType.FloorRequest:
-
+                            Elevator bestElevator = SearchBestElevator(req.ReqFloor, req.Dir);
+                            if (bestElevator != null)
+                            {
+                                bestElevator.ExecuteCallMission(req.ReqFloor);
+                                //bestElevator.Move(req.ReqFloor);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"[스케줄러] 요청된 {req.ReqFloor.FloorNo}층에 가장 적합한 엘리베이터가 없습니다.");
+                            }
                             Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.Dir.ToString()} 요청 감지됨.");
                             break;
                         case RequestType.FloorCancel:
@@ -97,7 +106,7 @@ namespace knoxxr.Evelvator.Core
                             Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 취소 요청 감지됨.");
                             break;
                     }
-                    
+
                     Requests.RemoveAt(0);
                 }
 
@@ -107,6 +116,17 @@ namespace knoxxr.Evelvator.Core
             }
         }
         
+        protected Elevator SearchBestElevator(Floor reqFloor, Direction dir)
+        {
+            foreach (var elevator in Elevators.Values)
+            {
+                if (elevator.IsAvailable(reqFloor, dir))
+                {
+                    return elevator;
+                }
+            }
+            return null;
+        }
 
     }
 

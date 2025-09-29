@@ -31,7 +31,7 @@ namespace knoxxr.Evelvator.Core
         {
             for (int floorNo = 1; floorNo <= TotalGroundFloor; floorNo++)
             {
-                Floor newFloor = new Floor(floorNo);
+                Floor newFloor = new Floor(floorNo, eleMgr.Elevators);
                 Floors.Add(newFloor.FloorNo, newFloor);
             }
 

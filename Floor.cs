@@ -15,11 +15,47 @@ namespace knoxxr.Evelvator.Core
         public Button BtnUp = new Button();
         public Button BtnDown = new Button();
 
-        public Floor(int floorNo)
+        public Floor(int floorNo, Dictionary<int, Elevator> elevators)
         {
             FloorNo = floorNo;
-            Position = (floorNo -1) * Height;
+            Position = (floorNo - 1) * Height;
+            InitiaizeElevatorEvent(elevators);
         }
+
+        protected void InitiaizeElevatorEvent(Dictionary<int, Elevator> elevators)
+        {
+            foreach (var ele in elevators.Values)
+            {
+                ele.EventArrivedFloor += Elevator_OnArrivedFloor;
+                ele.EventDoorOpened += Elevator_OnDoorOpened;
+                ele.EventDoorClosed += Elevator_OnDoorClosed;
+            }
+        }
+        private void Elevator_OnArrivedFloor(object sender, EventArgs e)
+        {
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (ele.CurrentFloor == this)
+            {
+                Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
+            }
+        }
+        private void Elevator_OnDoorOpened(object sender, EventArgs e)
+        {
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (ele.CurrentFloor == this)
+            {
+                Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+            }
+        }
+        private void Elevator_OnDoorClosed(object sender, EventArgs e)
+        {
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (ele.CurrentFloor == this)
+            {
+                Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+            }
+        }
+
         public void ReqUpSide()
         {
             BtnUp.Press();
