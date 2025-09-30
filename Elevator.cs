@@ -537,7 +537,7 @@ namespace knoxxr.Evelvator.Core
             await Task.Delay(DoorOperationTimeMs);
 
             // 상태 업데이트 (예: DoorState = DoorState.Open)
-            Console.WriteLine($"[ID {Id}] 문 열림 완료 (현재 층: {CalulateCurrentFloorNumber().FloorNo}).");
+            Console.WriteLine($"[ID {Id}] 문 열림 완료 (현재 층: {_currentFloor.FloorNo}).");
             ChangeElevatorState(ElevatorState.DoorOpened);
             OnDoorOpened(new ElevatorEventArgs(this));
         }
@@ -555,7 +555,7 @@ namespace knoxxr.Evelvator.Core
             await Task.Delay(DoorOpenWaitTimeMs);
 
             // 상태 업데이트 (예: DoorState = DoorState.Open)
-            Console.WriteLine($"[ID {Id}] 문 열림후 대기 완료 (현재 층: {CalulateCurrentFloorNumber().FloorNo}).");
+            Console.WriteLine($"[ID {Id}] 문 열림후 대기 완료 (현재 층: {_currentFloor.FloorNo}).");
             ChangeElevatorState(ElevatorState.DoorWaitingFinish);
         }
 
@@ -615,12 +615,7 @@ namespace knoxxr.Evelvator.Core
             {
                 return _currentFloor;
             }
-
-            if (_currentFloor.FloorNo != newFloor.FloorNo)
-            {
-                ChangeCurrentFloor(newFloor);
-            }
-
+            ChangeCurrentFloor(newFloor);
             return newFloor;
         }
 

@@ -67,15 +67,17 @@ namespace knoxxr.Evelvator.Sim
                 ele.EventArrivedFloor += Elevator_OnArrivedFloor;
                 ele.EventDoorOpened += Elevator_OnDoorOpened;
                 ele.EventDoorClosed += Elevator_OnDoorClosed;
-                ele.EventChangeCurrentFloor += Elevator_OnArrivedFloor;
+                ele.EventChangeCurrentFloor += Elevator_OnChangeCurrentFloor;
             }
         }
 
         private void Elevator_OnChangeCurrentFloor(object sender, EventArgs e)
         {
-            if (_state == PersonState.InElevator && _currentElevator != null)
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (_location == PersonLocation.Elevator && _currentElevator.Id != ele.Id)
             {
-                ChangeCurrentFloor(_currentElevator._currentFloor);
+                _curFloor = ele._currentFloor;
+                Console.WriteLine($"[Person {Id} in Elevator {_currentElevator.Id}] 현재 층이 {_curFloor.FloorNo}로 변경되었습니다.");
             }
         }
 
@@ -85,12 +87,12 @@ namespace knoxxr.Evelvator.Sim
             if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling))
             {
                 Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
-                ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
+                //ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
             }
             else if (ele._currentFloor.FloorNo == _targetFloor.FloorNo && _state == PersonState.InElevator)
             {
                 Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 목적지에 도착했습니다.");
-                ChangePersonState(PersonState.CheckDestinationReached);
+                //ChangePersonState(PersonState.CheckDestinationReached);
             }
         }
 
@@ -169,7 +171,7 @@ namespace knoxxr.Evelvator.Sim
                             GetInElevator(selectedEvlevator);
                             ChangePersonState(PersonState.GetIn);
                             ChangeLocation(PersonLocation.Elevator);
-                            _currentElevator = selectedEvlevator;
+                            ChangeCurrentElevator(selectedEvlevator);
                         }
                         break;
                     case PersonState.GetIn:
@@ -185,7 +187,7 @@ namespace knoxxr.Evelvator.Sim
                         break;
                     case PersonState.GetOut:
                         GetOutElevator();
-                        _currentElevator = null;
+                        ChangeCurrentElevator(null);
                         ChangePersonState(PersonState.Completed);
                         ChangeLocation(PersonLocation.Floor);
                         Console.WriteLine($"Person {Id} has completed their journey.");
@@ -323,9 +325,13 @@ namespace knoxxr.Evelvator.Sim
             _currentElevator.RemovePerson(this);
             OnGeOffElevator();
         }
-        public async Task PressButton(PersonRequest req)
+        protected void ChangeCurrentElevator(Elevator newElevator)
         {
-            await Task.Delay(ButtonPressDelayMs); // Simulate delay before pressing the button
+            _currentElevator = newElevator;
+        }
+        public void PressButton(PersonRequest req)
+        {
+            Thread.Sleep(ButtonPressDelayMs); // Simulate delay before pressing the button
             CrateElevatorRequest();
             //selectedElevator.ReqButton(targetFloor);
             OnReqButton(req.TargetFloor);
