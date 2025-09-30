@@ -9,7 +9,7 @@ namespace knoxxr.Evelvator.Core
         public static int TotalUndergroundFloor = 10;
         protected int TotalElevator = 2;
         public Dictionary<int, Floor> Floors = new Dictionary<int, Floor>();
-        public ElevatorManager eleMgr = new ElevatorManager();
+        public ElevatorManager eleMgr = null;
         public Sim_ReqGenerator simMgr = null;
 
         public Building()
@@ -19,33 +19,46 @@ namespace knoxxr.Evelvator.Core
 
         public void Initialize()
         {
-            InitBuilding();
+            InitFloors();
             InitElevatorManager();
-            simMgr = new Sim_ReqGenerator(this);
+            LinkFloorandElevator();
+            InitSimManager();
         }
 
         protected void InitSimManager()
         {
+            simMgr = new Sim_ReqGenerator(this);
         }
-        protected void InitBuilding()
+
+        protected void LinkFloorandElevator()
+        {
+            foreach (var floor in Floors.Values)
+            {
+                floor.Initialize(eleMgr);
+            }
+        }
+
+        protected void InitFloors()
         {
             for (int floorNo = 1; floorNo <= TotalGroundFloor; floorNo++)
             {
-                Floor newFloor = new Floor(floorNo, eleMgr.Elevators);
+                Floor newFloor = new Floor(floorNo);
                 Floors.Add(newFloor.FloorNo, newFloor);
             }
 
             for (int floorNo = -TotalUndergroundFloor; floorNo <= -1; floorNo++)
             {
-                Floor newFloor = new Floor(floorNo, eleMgr.Elevators);
+                Floor newFloor = new Floor(floorNo);
                 Floors.Add(newFloor.FloorNo, newFloor);
             }
 
-            Console.WriteLine($"Building initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
+            Console.WriteLine($"Floors initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
         }
 
         protected void InitElevatorManager()
         {
+            eleMgr = new ElevatorManager(this);
+
             eleMgr.Initialize(Floors, TotalElevator);
         }
     }

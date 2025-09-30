@@ -14,7 +14,7 @@ namespace knoxxr.Evelvator.Sim
 
         private Building Building;
 
-        protected List<Person> Persons = new List<Person>();
+        protected Dictionary<int, Person> People = new Dictionary<int, Person>();
         public Sim_ReqGenerator(Building building)
         {
             Building = building;
@@ -30,7 +30,7 @@ namespace knoxxr.Evelvator.Sim
 
                 Floor floor = Building.Floors[GetRandomFloor()];
                 Person newPerson = new Person(floor);
-                Persons.Add(newPerson);
+                People.Add(newPerson.Id, newPerson);
 
                 Console.WriteLine($"[생성됨] {newPerson}");
                 await Task.Delay(interval);

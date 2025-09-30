@@ -1,6 +1,7 @@
 using knoxxr.Evelvator.Core;
 using System.ComponentModel;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace knoxxr.Evelvator.Sim
 {
@@ -19,12 +20,23 @@ namespace knoxxr.Evelvator.Sim
         private BackgroundWorker _worker;
         private int _finalResult;
 
-        public int Id;
+        public PersonLocation _location = PersonLocation.Floor;
+        private static int nextId = 1;
+
+        private const int ButtonPressDelayMs = 1000; // 버튼 누르는 딜레이 (밀리초)
+        public readonly int Id = Interlocked.Increment(ref nextId);
+
         public Floor _curFloor;
         public int _targetFloor;
         public PersonState _state = PersonState.Waiting;
+
+        private ElevatorManager _elevatorManager;
+
+        private Elevator _currentElevator = null;
+        private PersonRequest _curRequest;
         public Person(Floor curFloor)
         {
+            
             ChangeCurrentFloor(curFloor);
             Initialize();
             CrateRequest();
@@ -33,6 +45,8 @@ namespace knoxxr.Evelvator.Sim
 
         public void Initialize()
         {
+            _elevatorManager = _curFloor._eleMgr;
+            InitiaizeElevatorEvent();
             ChangePersonState(PersonState.Waiting);
 
             _worker = new BackgroundWorker();
@@ -50,46 +64,148 @@ namespace knoxxr.Evelvator.Sim
                 _worker.RunWorkerAsync();
             }
         }
+
+        private void InitiaizeElevatorEvent()
+        {
+            foreach (var ele in _elevatorManager.Elevators.Values)
+            {
+                ele.EventArrivedFloor += Elevator_OnArrivedFloor;
+                ele.EventDoorOpened += Elevator_OnDoorOpened;
+                ele.EventDoorClosed += Elevator_OnDoorClosed;
+                ele.EventChangeCurrentFloor += Elevator_OnArrivedFloor; 
+            }   
+        }
+
+        private void Elevator_OnChangeCurrentFloor(object sender, EventArgs e)
+        {
+            if (_state == PersonState.InElevator && _currentElevator != null)
+            {
+                ChangeCurrentFloor(_currentElevator._currentFloor);
+            }
+        }
+
+        private void Elevator_OnArrivedFloor(object sender, EventArgs e)
+        {
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling))
+            {
+                Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
+                ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
+            }
+            else if (ele._currentFloor.FloorNo == _targetFloor && _state == PersonState.InElevator)
+            {
+                Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 목적지에 도착했습니다.");
+                ChangePersonState(PersonState.CheckDestinationReached);
+            }
+        }
+
+        private void Elevator_OnDoorOpened(object sender, EventArgs e)
+        {
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling || _state == PersonState.Waiting))
+            {
+                Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                ChangePersonState(PersonState.GetIn);
+            }
+            else if (ele._currentFloor.FloorNo == _targetFloor && _state == PersonState.InElevator)
+            {
+                Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                ChangePersonState(PersonState.GetOut);
+            }
+        }
+
+        private void Elevator_OnDoorClosed(object sender, EventArgs e)
+        {
+            Elevator ele = ((ElevatorEventArgs)e).Elevator;
+            if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling || _state == PersonState.Waiting))
+            {
+                Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                ChangePersonState(PersonState.Waiting);
+            }
+            else if (ele._currentFloor.FloorNo == _targetFloor && _state == PersonState.InElevator)
+            {
+                Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                ChangePersonState(PersonState.InElevator);
+            }
+        }
+
+        public void ChangeLocation(PersonLocation newLocation)
+        {
+            _location = newLocation;
+            Console.WriteLine($"Person {Id} location changed to {_location}.");
+        }
+
+        protected Elevator CheckArrivedElevatorAtCurrentFloor()
+        {
+            foreach (var ele in _elevatorManager.Elevators.Values)
+            {
+                if (ele._currentFloor != null
+                && ele._currentFloor.FloorNo == _curFloor.FloorNo
+                && (ele.State == ElevatorState.DoorOpened
+                || ele.State == ElevatorState.DoorWaiting)
+                && ele.IsMaximumOccupancy() == false)
+                {
+                    return ele;
+                }
+            }
+            return null;
+        }
+
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
-            switch (_state)
+            while (true)
             {
-                case PersonState.Waiting:
-                    CrateRequest();
-                    Thread.Sleep(5000); // 대기 상태에서 5초 대기
-                    break;
-                case PersonState.Calling:
-                    WaitingElevator();
-                    Thread.Sleep(3000); // 호출 상태에서 3초 대기
-                    break;
-                case PersonState.CheckArrivedElevatorAtCurrentFloor:
-                    // 엘리베이터 도착 확인 로직 필요
-                    Thread.Sleep(2000); // 도착 확인 상태에서 2초 대기
-                    break;
-                case PersonState.GetIn:
-                    GetInElevator();
-                    Thread.Sleep(4000); // 엘리베이터 탑승 상태에서 4초 대기
-                    break;
-                case PersonState.InElevator:
-                    WaitingforTargetFloor();
-                    Thread.Sleep(7000); // 엘리베이터 탑승 상태에서 7초 대기
-                    break;
-                case PersonState.CheckDestinationReached:
-                    GetOffElevator();
-                    Thread.Sleep(4000); // 목적지 도착 확인 상태에서 4초 대기
-                    break;
-                case PersonState.GetOut:
-                    ChangePersonState(PersonState.Completed);
-                    Console.WriteLine($"Person {Id} has completed their journey.");
-                    Thread.Sleep(2000); // 하차 상태에서 2초 대기
-                    break;
+                switch (_state)
+                {
+                    case PersonState.Waiting:
+                        ChangePersonState(PersonState.Calling);
+                        break;
+                    case PersonState.Calling:
+                        //WaitingElevator();
+                        CrateRequest();
+                        ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
+                        break;
+                    case PersonState.CheckArrivedElevatorAtCurrentFloor:
+                        Elevator selectedEvlevator = CheckArrivedElevatorAtCurrentFloor();
+                        if (selectedEvlevator != null)
+                        {
+                            GetInElevator(selectedEvlevator);                            
+                            ChangePersonState(PersonState.GetIn);
+                            ChangeLocation(PersonLocation.Elevator);
+                            _currentElevator = selectedEvlevator;
+                        }
+                        else
+                        {
+                            ChangePersonState(PersonState.Waiting);
+                        }
+                        Thread.Sleep(2000); // 도착 확인 상태에서 2초 대기
+                        break;
+                    case PersonState.GetIn:
+                        ChangePersonState(PersonState.InElevator);
+                        break;
+                    case PersonState.InElevator:                    
+                        ChangePersonState(PersonState.CheckDestinationReached);
+                        break;
+                    case PersonState.CheckDestinationReached:
+                        if(CheckArrivedonTargetFloor())
+                            ChangePersonState(PersonState.CheckDestinationReached);
+                        break;
+                    case PersonState.GetOut:
+                        GetOutElevator();
+                        _currentElevator = null;
+                        ChangePersonState(PersonState.Completed);
+                        ChangeLocation(PersonLocation.Floor);
+                        Console.WriteLine($"Person {Id} has completed their journey.");
+                        Thread.Sleep(2000); // 하차 상태에서 2초 대기
+                        break;
                     case PersonState.Completed:
-                // 완료 상태에서는 아무 작업도 하지 않음
-                    Thread.Sleep(1000); // 1초 대기
-                    break;
-                default:
-                    Thread.Sleep(1000); // 기타 상태에서는 1초 대기
-                    break;
+                        // 완료 상태에서는 아무 작업도 하지 않음
+                        Thread.Sleep(1000); // 1초 대기
+                        break;
+                    default:
+                        Thread.Sleep(1000); // 기타 상태에서는 1초 대기
+                        break;
+                }
             }
         }
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -98,21 +214,39 @@ namespace knoxxr.Evelvator.Sim
         protected void CrateRequest()
         {
             _targetFloor = MakeTargetFloor(_curFloor.FloorNo);
+            Direction dir = (_targetFloor > _curFloor.FloorNo) ? Direction.Up : Direction.Down;
 
-            if (_targetFloor > _curFloor.FloorNo)
+            PersonRequest newreq = new PersonRequest()
             {
-                CallUp();
-            }
-            else if (_targetFloor < _curFloor.FloorNo)
+                ReqPerson = this,
+                ReqFloor = _curFloor,
+                TargetFloor = _targetFloor,
+                Dir = dir
+            };
+
+            _curRequest = newreq;
+
+            switch (dir)
             {
-                CallDown();
+                case Direction.Up:
+                    CallUp();
+                    break;
+                case Direction.Down:
+                    CallDown();
+                    break;                
             }
+
             ChangePersonState(PersonState.Calling);
 
         }
 
-        protected void WaitingforTargetFloor()
+        protected bool CheckArrivedonTargetFloor()
         {
+            if (_curFloor.FloorNo == _targetFloor)
+            {
+                return true;
+            }
+            return false;
         }
 
         protected int MakeTargetFloor(int excludeFloor)
@@ -130,6 +264,7 @@ namespace knoxxr.Evelvator.Sim
         private void ChangePersonState(PersonState newState)
         {
             _state = newState;
+            Console.WriteLine($"Person {Id} state changed to {_state}.");
         }
         public override string ToString()
         {
@@ -174,21 +309,25 @@ namespace knoxxr.Evelvator.Sim
         }
         public void WaitingElevator()
         {
-            _state = PersonState.Waiting;
+            ChangePersonState(PersonState.Waiting);
             OnWaitingElevator();
         }
-        public void GetInElevator()
+        public async Task GetInElevator(Elevator selectedElevator)
         {
-            _state = PersonState.InElevator;
-            OnGetInElevator();
+            selectedElevator.AddPerson(this);
+            await PressButton(_targetFloor, selectedElevator);
+            ChangePersonState(PersonState.InElevator);
+            OnGetInElevator(selectedElevator);
         }
-        public void GetOffElevator()
+        public void GetOutElevator()
         {
-            _state = PersonState.CheckDestinationReached;
+            ChangePersonState(PersonState.GetOut);
             OnGeOffElevator();
         }
-        public void PressButton(int targetFloor)
+        public async Task PressButton(int targetFloor, Elevator selectedElevator)
         {
+            await Task.Delay(ButtonPressDelayMs); // Simulate delay before pressing the button
+            selectedElevator.ReqButton(targetFloor);
             OnReqButton(targetFloor);
         }
         public void CancelButton(int targetFloor)
@@ -200,14 +339,15 @@ namespace knoxxr.Evelvator.Sim
             PersonEventArgs args = new PersonEventArgs(this);
             EventWaitingElevator?.Invoke(this, args);
         }
-        public void OnGetInElevator()
+        public void OnGetInElevator(Elevator curElevator)
         {
-            PersonEventArgs args = new PersonEventArgs(this);
+            PersonEventArgs args = new PersonEventArgs(this, curElevator);
+
             EventGetInElevator?.Invoke(this, args);
         }
         public void OnGeOffElevator()
         {
-            PersonEventArgs args = new PersonEventArgs(this);
+            PersonEventArgs args = new PersonEventArgs(this, null);
             EventGeOffElevator?.Invoke(this, args);
         }
         public void OnReqlUp()
@@ -269,6 +409,21 @@ namespace knoxxr.Evelvator.Sim
         GetOut,
         Completed
     }
+
+    public enum PersonLocation
+    {
+        Floor,
+        Elevator
+    }
+
+    public struct PersonRequest
+    {
+        public Person ReqPerson;
+        public Floor ReqFloor;
+        public int TargetFloor;
+        public Direction Dir;
+        public PersonLocation ReqLocation;
+    }
     
     public class DirectionEventArgs : EventArgs
     {
@@ -292,10 +447,12 @@ namespace knoxxr.Evelvator.Sim
     public class PersonEventArgs : EventArgs
     {
         public Person Person { get; }
+        public Elevator CurElevator { get; }
 
-        public PersonEventArgs(Person person)
+        public PersonEventArgs(Person person, Elevator curElevator = null)
         {
             Person = person;
+            CurElevator = curElevator;
         }
     }
 }

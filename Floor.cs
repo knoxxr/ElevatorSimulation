@@ -12,19 +12,27 @@ namespace knoxxr.Evelvator.Core
         public int Position; // 층 위치 (mm)
         public int FloorNo;
 
+        public Dictionary<int, Elevator> _elevators;
+
+        public ElevatorManager _eleMgr = null;
+
         public Button BtnUp = new Button();
         public Button BtnDown = new Button();
 
-        public Floor(int floorNo, Dictionary<int, Elevator> elevators)
+        public Floor(int floorNo)
         {
             FloorNo = floorNo;
             Position = (floorNo - 1) * Height;
-            InitiaizeElevatorEvent(elevators);
         }
 
+        public void Initialize(ElevatorManager elevatorManager)
+        {
+            _eleMgr = elevatorManager;
+            InitiaizeElevatorEvent(_eleMgr.Elevators);
+        }
         protected void InitiaizeElevatorEvent(Dictionary<int, Elevator> elevators)
         {
-            foreach (var ele in elevators.Values)
+            foreach (var ele in _eleMgr.Elevators.Values)
             {
                 ele.EventArrivedFloor += Elevator_OnArrivedFloor;
                 ele.EventDoorOpened += Elevator_OnDoorOpened;
@@ -34,7 +42,7 @@ namespace knoxxr.Evelvator.Core
         private void Elevator_OnArrivedFloor(object sender, EventArgs e)
         {
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
-            if (ele.CurrentFloor == this)
+            if (ele._currentFloor == this)
             {
                 Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
             }
@@ -42,7 +50,7 @@ namespace knoxxr.Evelvator.Core
         private void Elevator_OnDoorOpened(object sender, EventArgs e)
         {
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
-            if (ele.CurrentFloor == this)
+            if (ele._currentFloor == this)
             {
                 Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
             }
@@ -50,7 +58,7 @@ namespace knoxxr.Evelvator.Core
         private void Elevator_OnDoorClosed(object sender, EventArgs e)
         {
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
-            if (ele.CurrentFloor == this)
+            if (ele._currentFloor == this)
             {
                 Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
             }

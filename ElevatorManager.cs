@@ -1,4 +1,6 @@
 using System.Threading;
+using knoxxr.Evelvator.Core;
+using knoxxr.Evelvator.Sim;
 
 namespace knoxxr.Evelvator.Core
 {
@@ -6,11 +8,15 @@ namespace knoxxr.Evelvator.Core
     {
         public Dictionary<int, Elevator> Elevators = new Dictionary<int, Elevator>();
         public Dictionary<int, Floor> Floors;
+        public Dictionary<int, Person> People = new Dictionary<int, Person>();
 
-        public List<ElevatorRequest> Requests = new List<ElevatorRequest>();
+        public List<PersonRequest> Requests = new List<PersonRequest>();
 
-        public ElevatorManager()
+        public Building _building = null;
+
+        public ElevatorManager(Building building)
         {
+            this._building = building;
         }
         public void Initialize(Dictionary<int, Floor> floors, int totalElevator)
         {
@@ -19,26 +25,32 @@ namespace knoxxr.Evelvator.Core
             SchedulerThread.Start();
 
             Floors = floors;
-            InitFoorReqEvent();
+            InitFloorReqEvent();
 
             for (int eleNo = 1; eleNo <= totalElevator; eleNo++)
             {
-                Elevator newElevator = new Elevator(eleNo);
+                Elevator newElevator = new Elevator(eleNo, _building);
                 Elevators.Add(newElevator.Id, newElevator);
             }
 
             Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
         }
-        private void InitFoorReqEvent()
+        private void InitFloorReqEvent()
         {
-            foreach (KeyValuePair<int, Floor> floor in Floors)
-            {
-                floor.Value.EventReqUp += Floor_OnReqUp;
-                floor.Value.EventReqDown += Floor_OnReqDown;
-                floor.Value.EventCancelUp += Floor_OnCalcenUp;
-                floor.Value.EventCancelDown += Floor_OnCancelDown;
-            }
+            //foreach (KeyValuePair<int, Floor> floor in Floors)
+            //{
+             //   floor.Value.EventReqUp += Floor_OnReqUp;
+              //  floor.Value.EventReqDown += Floor_OnReqDown;
+               // floor.Value.EventCancelUp += Floor_OnCalcenUp;
+                //floor.Value.EventCancelDown += Floor_OnCancelDown;
+            //}
         }
+        public void RequestElevator(PersonRequest request)
+        {
+            Requests.Add(request);
+            Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor}.");
+        }
+        /*
         public void Floor_OnReqUp(object sender, EventArgs e)
         {
             Floor reqFloor = ((FloorEventArgs)e).ReqFloor;
@@ -69,6 +81,7 @@ namespace knoxxr.Evelvator.Core
 
             Console.WriteLine($"Floor {reqFloor} canceled DOWN request. Nearest elevator is stopping.");
         }
+        */
         public Elevator GetNearestElevator(Floor reqFloor)
         {
             return null;
@@ -81,14 +94,13 @@ namespace knoxxr.Evelvator.Core
                 {
                     var req = Requests[0];
 
-                    switch (req.ReqType)
+                    switch (req.ReqLocation)
                     {
-                        case RequestType.FloorRequest:
+                        case PersonLocation.Floor:
                             Elevator bestElevator = SearchBestElevator(req.ReqFloor, req.Dir);
                             if (bestElevator != null)
                             {
                                 bestElevator.ExecuteCallMission(req.ReqFloor);
-                                //bestElevator.Move(req.ReqFloor);
                             }
                             else
                             {
@@ -96,14 +108,8 @@ namespace knoxxr.Evelvator.Core
                             }
                             Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.Dir.ToString()} 요청 감지됨.");
                             break;
-                        case RequestType.FloorCancel:
-                            Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.Dir.ToString()} 취소 요청 감지됨.");
-                            break;
-                        case RequestType.ButtonRequest:
-                            Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 요청 감지됨.");
-                            break;
-                        case RequestType.ButtonCancel:
-                            Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 취소 요청 감지됨.");
+                        case PersonLocation.Elevator:
+                            Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor}층 버튼 요청 감지됨.");
                             break;
                     }
 
@@ -140,13 +146,15 @@ namespace knoxxr.Evelvator.Core
 
     public struct ElevatorRequest
     {
+        public Person ReqPerson;
         public RequestType ReqType;
         public Floor ReqFloor = null;
         public Floor TargetFloor = null;
         public Direction Dir = Direction.None;
 
-        public ElevatorRequest(RequestType requestType, Floor reqFloor, Floor targetFloor, Direction dir)
+        public ElevatorRequest(Person reqPerson, RequestType requestType, Floor reqFloor, Floor targetFloor, Direction dir)
         {
+            ReqPerson = reqPerson;
             ReqType = requestType;
             TargetFloor = targetFloor;
             ReqFloor = reqFloor;
