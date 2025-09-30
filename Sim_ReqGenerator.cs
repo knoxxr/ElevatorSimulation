@@ -12,12 +12,12 @@ namespace knoxxr.Evelvator.Sim
         private readonly int _minIntervalMs = 10000;
         private readonly Random _random = new Random();
 
-        private Building Building;
+        private Building _building;
 
         protected Dictionary<int, Person> People = new Dictionary<int, Person>();
         public Sim_ReqGenerator(Building building)
         {
-            Building = building;
+            _building = building;
 
             Task taskA = Task.Run(() => RunTaskMethod());
         }
@@ -28,8 +28,14 @@ namespace knoxxr.Evelvator.Sim
             {
                 int interval = _random.Next(_minIntervalMs, DensityFactor + 1);
 
-                Floor floor = Building.Floors[GetRandomFloor()];
-                Person newPerson = new Person(floor);
+                Floor floor = _building.Floors[GetRandomFloor()];
+                Person newPerson = new Person(floor, _building);
+                newPerson.EventRequestCompleted += (s, e) =>
+                {
+                    Person person = (Person)s;
+                    People.Remove(person.Id);
+                    Console.WriteLine($"[완료] {person}");
+                };
                 People.Add(newPerson.Id, newPerson);
 
                 Console.WriteLine($"[생성됨] {newPerson}");

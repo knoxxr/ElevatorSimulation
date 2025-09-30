@@ -48,7 +48,7 @@ namespace knoxxr.Evelvator.Core
         public void RequestElevator(PersonRequest request)
         {
             Requests.Add(request);
-            Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor}.");
+            Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
         }
         /*
         public void Floor_OnReqUp(object sender, EventArgs e)
@@ -97,19 +97,20 @@ namespace knoxxr.Evelvator.Core
                     switch (req.ReqLocation)
                     {
                         case PersonLocation.Floor:
-                            Elevator bestElevator = SearchBestElevator(req.ReqFloor, req.Dir);
+                            Elevator bestElevator = SearchBestElevator(req.ReqFloor, req.ReqDirection);
                             if (bestElevator != null)
                             {
-                                bestElevator.ExecuteCallMission(req.ReqFloor);
+                                bestElevator.ExecuteCallMission(req);
                             }
                             else
                             {
                                 Console.WriteLine($"[스케줄러] 요청된 {req.ReqFloor.FloorNo}층에 가장 적합한 엘리베이터가 없습니다.");
                             }
-                            Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.Dir.ToString()} 요청 감지됨.");
+                            Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.ReqDirection.ToString()} 요청 감지됨.");
                             break;
                         case PersonLocation.Elevator:
-                            Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor}층 버튼 요청 감지됨.");
+                            Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 요청 감지됨.");
+                            req.ReqElevator.ExecuteCallMission(req);
                             break;
                     }
 
@@ -117,7 +118,7 @@ namespace knoxxr.Evelvator.Core
                 }
 
                 // Check each elevator's state and move them accordingly
-                Console.WriteLine("Scheduler tick: Checking elevator states...");
+                //Console.WriteLine("Scheduler tick: Checking elevator states...");
                 Thread.Sleep(1000); // Simulate time delay
             }
         }

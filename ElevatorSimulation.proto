@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+// C# 네임스페이스 지정
+option csharp_namespace = "knoxxr.ElevatorSimulation.Grpc"; 
+
+package ElevatorSimulation;
+
+// 서비스 정의
+service ElevatorSim  {
+  // 단항 RPC: HelloRequest를 받아 HelloReply를 반환합니다.
+  rpc SayHello (HelloRequest) returns (HelloReply);
+}
+
+// 메시지(요청) 정의
+message HelloRequest {
+  string name = 1;
+}
+
+// 메시지(응답) 정의
+message HelloReply {
+  string message = 1;
+}
