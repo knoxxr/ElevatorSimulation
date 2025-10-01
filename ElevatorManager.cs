@@ -14,6 +14,8 @@ namespace knoxxr.Evelvator.Core
 
         public Building _building = null;
 
+        private UISocket uISocket;
+
         public ElevatorManager(Building building)
         {
             this._building = building;
@@ -33,16 +35,43 @@ namespace knoxxr.Evelvator.Core
                 Elevators.Add(newElevator.Id, newElevator);
             }
 
+            uISocket = new UISocket(this);
+
             Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
+
+           //InitUISocket().GetAwaiter().GetResult();
+        }
+        
+        private async Task InitUISocket()
+        {
+           /*  // 시스템에서 JSON 직렬화를 위한 설정 확인 메시지
+            Console.WriteLine(".NET 엘리베이터 시뮬레이터 서버 시작 (Flask 통신).");
+
+            // Ctrl+C 입력 시 프로그램 종료를 위해 대기
+            var cts = new CancellationTokenSource();
+            Console.CancelKeyPress += (sender, eventArgs) =>
+            {
+                eventArgs.Cancel = true;
+                cts.Cancel();
+                Console.WriteLine("프로그램 종료 요청...");
+            };
+
+            var simulator = new ElevatorSimulationManager();
+
+            // 시뮬레이션 및 TCP 통신 시작 (이제 내부적으로 클라이언트/서버 역할 모두 수행)
+            await simulator.StartSimulationAsync();
+
+            // 프로그램이 종료될 때까지 대기
+            await Task.Delay(Timeout.Infinite, cts.Token); */
         }
         private void InitFloorReqEvent()
         {
             //foreach (KeyValuePair<int, Floor> floor in Floors)
             //{
-             //   floor.Value.EventReqUp += Floor_OnReqUp;
-              //  floor.Value.EventReqDown += Floor_OnReqDown;
-               // floor.Value.EventCancelUp += Floor_OnCalcenUp;
-                //floor.Value.EventCancelDown += Floor_OnCancelDown;
+            //   floor.Value.EventReqUp += Floor_OnReqUp;
+            //  floor.Value.EventReqDown += Floor_OnReqDown;
+            // floor.Value.EventCancelUp += Floor_OnCalcenUp;
+            //floor.Value.EventCancelDown += Floor_OnCancelDown;
             //}
         }
         public void RequestElevator(PersonRequest request)
