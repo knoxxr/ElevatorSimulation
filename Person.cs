@@ -74,9 +74,9 @@ namespace knoxxr.Evelvator.Sim
         private void Elevator_OnChangeCurrentFloor(object sender, EventArgs e)
         {
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
-            if (_location == PersonLocation.Elevator && _currentElevator.Id != ele.Id)
+            if (_location == PersonLocation.Elevator && _currentElevator.Id == ele.Id)
             {
-                _curFloor = ele._currentFloor;
+                ChangeCurrentFloor(ele._currentFloor);
                 Console.WriteLine($"[Person {Id} in Elevator {_currentElevator.Id}] 현재 층이 {_curFloor.FloorNo}로 변경되었습니다.");
             }
         }
@@ -183,7 +183,7 @@ namespace knoxxr.Evelvator.Sim
                         break;
                     case PersonState.CheckDestinationReached:
                         if (CheckArrivedonTargetFloor())
-                            ChangePersonState(PersonState.CheckDestinationReached);
+                            ChangePersonState(PersonState.GetOut);
                         break;
                     case PersonState.GetOut:
                         GetOutElevator();
@@ -200,6 +200,8 @@ namespace knoxxr.Evelvator.Sim
                         Thread.Sleep(1000); // 기타 상태에서는 1초 대기
                         break;
                 }
+
+                Thread.Sleep(500); // 각 상태에서의 작업 사이에 약간의 대기 시간 추가
             }
         }
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -245,8 +247,11 @@ namespace knoxxr.Evelvator.Sim
         {
             if (_curFloor.FloorNo == _curRequest.TargetFloor.FloorNo)
             {
+                Console.WriteLine($"Person {Id} has arrived at the target floor {_curFloor.FloorNo}.");
                 return true;
             }
+
+            //Console.WriteLine($"Person {Id} has not yet arrived at the target floor {_curRequest.TargetFloor.FloorNo}. Current floor: {_curFloor.FloorNo}.");
             return false;
         }
 
@@ -269,7 +274,19 @@ namespace knoxxr.Evelvator.Sim
         }
         public override string ToString()
         {
-            return $"Person {Id} at Floor: {_curFloor.FloorNo}, Target Floor: {_targetFloor.FloorNo}, State: {_state}";
+            string result;
+
+            try
+            {
+                result = $"Person {Id} at Floor: {_curFloor.FloorNo}, Target Floor: {_targetFloor?.FloorNo}, State: {_state}";
+                result += $", Current Elevator: {_currentElevator?.Id}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"오류 발생: {ex.Message}");
+                return "Error generating string representation.";
+            }
+            return result;
         }
         public void CallUp()
         {

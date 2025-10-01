@@ -173,7 +173,14 @@ namespace knoxxr.Evelvator.Core
                         CurrentPosition += distanceMoved;
                         currentVelocity = nextVelocity;
 
-                        CalulateCurrentFloorNumber();
+                        try
+                        {
+                            CalulateCurrentFloorNumber();
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[ID {Id}] CalulateCurrentFloorNumber 중 오류: {ex.Message}");
+                        }
 
                         Console.WriteLine($"[ID {Id}] / [이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m, 목표층 : {targetFloorNo}, 현재 층수 : {_currentFloor.FloorNo}, 방향 : {CurrentDirection.ToString()}");
 
@@ -186,6 +193,15 @@ namespace knoxxr.Evelvator.Core
                         // 목표 위치에 도달했고, 속도가 0에 가까우며, 이것이 경로상의 목표일 때
                         if (isStoppingForPath && Math.Abs(CurrentPosition - targetPosition) < 0.001 && Math.Abs(currentVelocity) < 0.001)
                         {
+                            try
+                            {
+                                CalulateCurrentFloorNumber();
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"[ID {Id}] CalulateCurrentFloorNumber 중 오류: {ex.Message}");
+                            }
+                            OnArrived(new ElevatorEventArgs(this));
                             // 최종 위치와 속도를 정돈
                             CurrentPosition = targetPosition;
                             currentVelocity = 0;
@@ -196,18 +212,34 @@ namespace knoxxr.Evelvator.Core
                             {
                                 // 제거하기 전에 MovingPath[0]이 여전히 targetFloorNo인지 확인하는 것이 안전합니다.
                                 // 하지만 여기서는 간단히 제거합니다.
-                                MovingPath.RemoveAt(0);
+                                try
+                                {
+                                    MovingPath.RemoveAt(0);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[ID {Id}] 경로 제거 중 오류: {ex.Message}");
+                                }
+
+                                Console.WriteLine($"[ID {Id}] / [경로 도착] {targetFloorNo}층 도착! 다음 목표 확인.");
+
+                                try
+                                {
+                                    // 문 열림/닫힘 비동기 작업 시작
+                                    Task.Run(async () =>
+                                {
+                                    await OpenDoorAsync();
+                                    await OpenDoorWaitAsync();
+                                    await CloseDoorAsync();
+                                }).Wait(); // Wait()로 동기화하여 다음 루프 전에 완료되도록 함
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"[ID {Id}] 문 제어 중 오류: {ex.Message}");
+                                }
                             }
 
-                            Console.WriteLine($"[ID {Id}] / [경로 도착] {targetFloorNo}층 도착! 다음 목표 확인.");
-
-                            // 문 열림/닫힘 비동기 작업 시작
-                            Task.Run(async () =>
-                            {
-                                await OpenDoorAsync();
-                                await OpenDoorWaitAsync();
-                                await CloseDoorAsync();
-                            }).Wait(); // Wait()로 동기화하여 다음 루프 전에 완료되도록 함
+                            ChangeElevatorState(ElevatorState.Idle);
                         }
 
                         // 🚨 락: 다음 루프 조건을 위해 Count를 다시 읽습니다.
@@ -229,272 +261,6 @@ namespace knoxxr.Evelvator.Core
             finally
             {
                 // 작업 완료 후 상태를 Idle로 변경
-                ChangeElevatorState(ElevatorState.Idle);
-            }
-        }
-
-        public async Task MoveAsync(Floor targetFloor)
-        {
-            if (targetFloor == null) return;
-            if (_state == ElevatorState.Moving) return;
-
-            // CancellationTokenSource 생성
-            cts = new CancellationTokenSource();
-
-            // 상태 변경
-            ChangeElevatorState(ElevatorState.Moving);
-
-            // 이동 루프 설정
-            const int updateIntervalMs = 50;
-            double deltaTime = updateIntervalMs / 1000.0; // 0.05초
-
-            try
-            {
-                // MovingPath에 목표가 있거나 엘리베이터가 움직이고 있을 때 루프를 계속합니다.
-                while (MovingPath.Count > 0 || Math.Abs(currentVelocity) > 0.001)
-                {
-                    // ----------------------------------------------------
-                    // 1. 현재 목표 위치 설정 (MovingPath 비었을 때 정지 층으로 설정)
-                    // ----------------------------------------------------
-
-                    double targetPosition;
-                    int targetFloorNo = -1;
-                    bool isStoppingForPath = false;
-
-                    if (MovingPath.Count > 0)
-                    {
-                        // 경로의 첫 번째 층을 목표로 설정
-                        targetPosition = MovingPath[0].Position;
-                        targetFloorNo = MovingPath[0].FloorNo;
-                        isStoppingForPath = true; // 경로상의 목표
-                    }
-                    else // 🚨 경로가 비었을 경우 (MovingPath.Count == 0)
-                    {
-                        targetPosition = GetNearestFloorPosition();
-                        // targetFloorNo는 GetFloorNumberByPosition 함수를 통해 얻는다고 가정
-                        // isStoppingForPath = false; // 경로 목표가 아니므로 false 유지
-
-                        Console.WriteLine($"[ID {Id}] **경로 소진**! 가장 가까운 층 ({targetPosition:F2}m)으로 감속합니다.");
-                    }
-
-                    // 1-1. 취소 요청 확인 및 목표 위치 변경 (기존 로직)
-                    if (cts.IsCancellationRequested)
-                    {
-                        // 취소 시, 목표를 가장 가까운 층으로 변경하여 즉시 정지 유도
-                        if (targetPosition != GetNearestFloorPosition())
-                        {
-                            targetPosition = GetNearestFloorPosition();
-                            // targetFloorNo 갱신 로직 필요
-                        }
-                        isStoppingForPath = false; // 취소 정지는 경로 이행이 아님
-                    }
-
-                    // ----------------------------------------------------
-                    // 2. 남은 거리 계산 및 방향 설정 (기존 로직)
-                    // ----------------------------------------------------
-                    double remainingDistance = targetPosition - CurrentPosition;
-                    double absRemainingDistance = Math.Abs(remainingDistance);
-                    int direction = Math.Sign(remainingDistance);
-
-                    // ... (방향 설정 로직) ...
-                    if (direction > 0)
-                        ChangeDirectionState(Direction.Up);
-                    else if (direction < 0)
-                        ChangeDirectionState(Direction.Down);
-                    else
-                        ChangeDirectionState(Direction.None);
-
-                    // 3. 가속/감속 상태 결정 (기존 로직)
-                    double distanceToStop = (currentVelocity * currentVelocity) / (2 * Acceleration);
-                    bool shouldDecelerate = absRemainingDistance <= Math.Max(distanceToStop, DecelerationDistance);
-
-                    double targetAcceleration;
-                    if (absRemainingDistance < 0.001)
-                        targetAcceleration = -currentVelocity / deltaTime;
-                    else if (shouldDecelerate)
-                        targetAcceleration = -direction * Acceleration;
-                    else
-                        targetAcceleration = direction * Acceleration;
-
-                    // 4. 속도 및 위치 업데이트 (기존 로직)
-                    double nextVelocity = currentVelocity + targetAcceleration * deltaTime;
-
-                    if (!shouldDecelerate)
-                        nextVelocity = Math.Min(Math.Abs(nextVelocity), MaxSpeed) * direction;
-
-                    if (direction != 0 && Math.Sign(nextVelocity) != direction && absRemainingDistance < 0.01)
-                        nextVelocity = 0;
-
-                    double averageVelocity = (currentVelocity + nextVelocity) / 2.0;
-                    double distanceMoved = averageVelocity * deltaTime;
-
-                    if (absRemainingDistance > 0 && Math.Abs(distanceMoved) > absRemainingDistance)
-                    {
-                        distanceMoved = remainingDistance;
-                        nextVelocity = 0;
-                    }
-
-                    CurrentPosition += distanceMoved;
-                    currentVelocity = nextVelocity;
-
-                    CalulateCurrentFloorNumber();
-
-                    // Console.WriteLine
-                    Console.WriteLine($"[ID {Id}] / [이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m, 목표층 : {targetFloorNo}, 현재 층수 : {_currentFloor.FloorNo}, 방향 : {CurrentDirection.ToString()}");
-
-                    // 5. 시뮬레이션 지연 (비동기 대기)
-                    await Task.Delay(updateIntervalMs, cts.Token);
-
-                    // ----------------------------------------------------
-                    // 6. 도착 확인 및 경로 업데이트
-                    // ----------------------------------------------------
-                    // 목표 위치에 도달했고, 속도가 0에 가까우며, 이것이 경로상의 목표일 때
-                    if (isStoppingForPath && Math.Abs(CurrentPosition - targetPosition) < 0.001 && Math.Abs(currentVelocity) < 0.001)
-                    {
-                        // 최종 위치와 속도를 정돈
-                        CurrentPosition = targetPosition;
-                        currentVelocity = 0;
-                        ChangeDirectionState(Direction.None);
-
-                        // 도착 처리
-                        Console.WriteLine($"[ID {Id}] / [경로 도착] {targetFloorNo}층 도착! 다음 목표 확인.");
-
-                        // 도착한 층을 경로에서 제거 (다음 루프에서 새 목표를 읽게 됨)
-                        MovingPath.RemoveAt(0);
-
-                        await OpenDoorAsync();
-                        await OpenDoorWaitAsync();
-                        await CloseDoorAsync();
-
-                        // Door handling can be called here: await OpenDoorAsync(); await Task.Delay(3000); await CloseDoorAsync();
-                    }
-                } // while 루프 종료
-
-                // 최종 정지 후 상태 정리
-                ChangeDirectionState(Direction.None);
-            }
-            catch (TaskCanceledException)
-            {
-                // 취소 처리 로직
-            }
-            finally
-            {
-                // 작업 완료 후 상태를 Idle로 변경
-                ChangeElevatorState(ElevatorState.Idle);
-            }
-        }
-        public async Task MoveAsync2(Floor targetFloor)
-        {
-            if (targetFloor == null) return;
-            if (_state == ElevatorState.Moving) return;
-
-            Console.WriteLine($"[ID {Id}] / [요청] {targetFloor.FloorNo}층으로 이동 요청됨.");
-
-            cts = new CancellationTokenSource();
-            //await MoveElevatorAsync(targetFloor.Position, targetFloor.FloorNo, cts.Token);
-
-            if (_state == ElevatorState.Moving) return;
-            ChangeElevatorState(ElevatorState.Moving);
-
-            // 이동 루프는 50ms마다 갱신 (시뮬레이션 시간 간격)
-            const int updateIntervalMs = 50;
-            double deltaTime = updateIntervalMs / 1000.0; // 0.05초
-
-            try
-            {
-                double targetPosition = targetFloor.Position;
-
-                while (Math.Abs(CurrentPosition - targetPosition) > 0.001 || Math.Abs(currentVelocity) > 0.001)
-                {
-                    // 1. 취소 요청 확인 및 목표 위치 변경 (가장 가까운 층으로)
-                    if (cts.IsCancellationRequested)
-                    {
-                        // 취소 요청 시, 목표를 가장 가까운 층으로 변경하고 루프를 계속함
-                        if (targetPosition != GetNearestFloorPosition())
-                        {
-                            targetPosition = GetNearestFloorPosition();
-                            //Console.WriteLine($"[취소] 요청됨. 목표 위치를 가장 가까운 층 ({targetPosition:F2}m)으로 변경.");
-                        }
-                        // 이미 가장 가까운 층으로 목표가 설정된 경우, 다음 로직에서 정지할 것임
-                    }
-
-                    // 2. 남은 거리 계산
-                    double remainingDistance = targetPosition - CurrentPosition;
-                    double absRemainingDistance = Math.Abs(remainingDistance);
-                    int direction = Math.Sign(remainingDistance);
-
-                    if (direction > 0)
-                        ChangeDirectionState(Direction.Up);
-                    else if (direction < 0)
-                        ChangeDirectionState(Direction.Down);
-                    else
-                        ChangeDirectionState(Direction.None);
-                    // 3. 가속/감속 상태 결정
-                    double distanceToStop = (currentVelocity * currentVelocity) / (2 * Acceleration);
-                    bool shouldDecelerate = absRemainingDistance <= Math.Max(distanceToStop, DecelerationDistance);
-
-                    double targetAcceleration;
-
-                    if (absRemainingDistance < 0.001)
-                    {
-                        targetAcceleration = -currentVelocity / deltaTime;
-                    }
-                    else if (shouldDecelerate)
-                    {
-                        targetAcceleration = -direction * Acceleration;
-                    }
-                    else
-                    {
-                        targetAcceleration = direction * Acceleration;
-                    }
-
-                    // 4. 속도 및 위치 업데이트 (이전 코드의 로직과 동일)
-                    double nextVelocity = currentVelocity + targetAcceleration * deltaTime;
-
-                    if (!shouldDecelerate)
-                    {
-                        nextVelocity = Math.Min(Math.Abs(nextVelocity), MaxSpeed) * direction;
-                    }
-
-                    if (direction != 0 && Math.Sign(nextVelocity) != direction && absRemainingDistance < 0.01)
-                    {
-                        nextVelocity = 0;
-                    }
-
-                    double averageVelocity = (currentVelocity + nextVelocity) / 2.0;
-                    double distanceMoved = averageVelocity * deltaTime;
-
-                    if (absRemainingDistance > 0 && Math.Abs(distanceMoved) > absRemainingDistance)
-                    {
-                        distanceMoved = remainingDistance;
-                        nextVelocity = 0;
-                    }
-
-                    CurrentPosition += distanceMoved;
-                    currentVelocity = nextVelocity;
-
-                    CalulateCurrentFloorNumber();
-
-                    Console.WriteLine($"[ID {Id}] / [이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m, 목표층 : {targetFloor.FloorNo}, 현재 층수 : {_currentFloor.FloorNo}, 방향 : {CurrentDirection.ToString()}");
-                    // 5. 시뮬레이션 지연 (비동기 대기)
-
-                    await Task.Delay(updateIntervalMs, cts.Token);
-                }
-
-                ChangeDirectionState(Direction.None);
-
-                // 최종 정리
-                CurrentPosition = targetPosition;
-                currentVelocity = 0;
-            }
-            catch (TaskCanceledException)
-            {
-                // 가장 가까운 층으로 이동하는 도중 Task가 명시적으로 취소되면 (예: 외부에서 cts.Cancel() 호출)
-                // 이 블록이 실행되지만, 우리는 루프 내에서 취소 요청을 확인하고 있으므로 이 예외는 무시하거나 로깅할 수 있습니다.
-                //Console.WriteLine("이동 Task가 외부에서 취소되었습니다.");
-            }
-            finally
-            {
                 ChangeElevatorState(ElevatorState.Idle);
             }
         }
