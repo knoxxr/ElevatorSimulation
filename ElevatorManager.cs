@@ -36,6 +36,7 @@ namespace knoxxr.Evelvator.Core
             }
 
             uISocket = new UISocket(this);
+            uISocket.StartSimulationAsync();
 
             Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
 

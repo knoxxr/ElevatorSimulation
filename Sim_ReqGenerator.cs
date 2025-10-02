@@ -19,7 +19,7 @@ namespace knoxxr.Evelvator.Sim
         {
             _building = building;
 
-            Task taskA = Task.Run(() => RunTaskMethod());
+            //Task taskA = Task.Run(() => RunTaskMethod());
         }
 
         public async Task RunTaskMethod()

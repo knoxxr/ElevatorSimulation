@@ -6,53 +6,64 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq; // MinBy/OrderBy 사용을 위해 필요
 
 namespace knoxxr.Evelvator.Core
 {
     // =======================================================
-    // 3. 메인 시뮬레이션 및 TCP 통신 클래스
+    // 0. 데이터 모델 (외부 클래스에 정의되었다고 가정)
     // =======================================================
+    /* * 주의: 이 모델들은 프로젝트의 다른 곳에 정의되어 있어야 합니다.
+    * public class Elevator { ... } 
+    * public class ElevatorManager { ... }
+    * public class ElevatorStateModel { ... } // 전송용 상태 모델
+    */
+
+    // 임시 데이터 모델 정의 (컴파일 오류 방지용)
+    public class ElevatorStateModel
+    {
+        public int id { get; set; }
+        public double position_m { get; set; }
+        public int floor_no { get; set; }
+        public string status { get; set; }
+    }
+    public class FloorRequest
+    {
+        public int floor { get; set; }
+        public string direction { get; set; }
+    }
+
     // =======================================================
     // 3. 메인 시뮬레이션 및 TCP 통신 클래스
     // =======================================================
     public class UISocket
     {
-        // C# --> Flask (상태 전송)
+        // C# --> Flask (상태 전송 클라이언트)
         private const string FlaskHost = "127.0.0.1";
-        private const int FlaskPort = 65432;
+        private const int FlaskPort = 65432; // Flask가 이 포트에서 수신(서버) 역할을 합니다.
 
-        // Flask --> C# (요청 수신)
-        private const int ListenerPort = 65433; // 새로운 포트 사용 (백엔드 서버 역할)
+        // Flask --> C# (요청 수신 서버)
+        private const int ListenerPort = 65433; // C#이 이 포트에서 리스닝(서버) 역할을 합니다.
 
-        private const int UpdateIntervalMs = 100;
-        private const int TotalElevators = 2;
+        private const int UpdateIntervalMs = 1000; // 1초마다 상태 전송 요청
+        private const int TotalElevators = 2; // (사용되지 않음: _eleManager에서 가져옴)
 
-        private readonly List<Elevator> _elevators = new List<Elevator>();
+        // private readonly List<Elevator> _elevators = new List<Elevator>(); // _eleManager로 대체
         private TcpClient _client;
         private StreamWriter _writer;
-
         private ElevatorManager _eleManager;
 
         public UISocket(ElevatorManager elevatorManager)
         {
             _eleManager = elevatorManager;
-            // 엘리베이터 초기화
-            //StartSimulationAsync();
 
-            Console.WriteLine($"[C# 시뮬레이터] {TotalElevators}대의 엘리베이터 초기화 완료.");
+            // Console.WriteLine($"[C# 시뮬레이터] {TotalElevators}대의 엘리베이터 초기화 완료.");
 
-            var cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (sender, eventArgs) =>
-            {
-                eventArgs.Cancel = true;
-                cts.Cancel();
-                Console.WriteLine("프로그램 종료 요청...");
-            };
-            Task.Delay(Timeout.Infinite, cts.Token);
+            // Task.Delay(Timeout.Infinite, cts.Token); 부분은 Main 함수에서 처리해야 합니다.
         }
 
         /// <summary>
-        /// Flask로부터 요청을 수신할 서버를 시작하고, 시뮬레이션을 시작합니다.
+        /// Flask와의 통신을 시작합니다. 상태 전송(Client) 및 요청 수신(Server)을 병렬로 실행합니다.
         /// </summary>
         public async Task StartSimulationAsync()
         {
@@ -66,9 +77,9 @@ namespace knoxxr.Evelvator.Core
             await Task.WhenAll(listenerTask, senderTask);
         }
 
-        /// <summary>
-        /// Flask 서버에 연결하고 실시간 상태를 전송합니다. (클라이언트 역할)
-        /// </summary>
+        // ----------------------------------------------------------------
+        // C# -> Flask: 상태 전송 (클라이언트 역할 - Port 65432)
+        // ----------------------------------------------------------------
         private async Task ConnectAndSendLoopAsync()
         {
             while (true)
@@ -78,30 +89,22 @@ namespace knoxxr.Evelvator.Core
                     _client = new TcpClient();
                     await _client.ConnectAsync(FlaskHost, FlaskPort);
 
-                    Console.WriteLine($"[TCP 클라이언트] Flask 서버 ({FlaskHost}:{FlaskPort}) 연결 성공.");
+                    Console.WriteLine($"[TCP 클라이언트] Flask 서버 ({FlaskHost}:{FlaskPort}) 연결 성공. 상태 전송 시작.");
 
                     _writer = new StreamWriter(_client.GetStream(), Encoding.UTF8) { AutoFlush = true };
 
                     while (_client.Connected)
                     {
-                        double deltaTime = UpdateIntervalMs / 1000.0;
-
-                        // 1. 시뮬레이션 업데이트
-                        foreach (var elevator in _elevators)
-                        {
-                            //elevator.UpdateMockMovement(deltaTime);
-                        }
-
-                        // 2. 현재 상태를 JSON으로 직렬화 및 전송
+                        // 1초마다 상태를 JSON으로 직렬화 및 전송
                         string jsonPayload = GetCurrentStatesJson();
                         await _writer.WriteLineAsync(jsonPayload);
 
-                        await Task.Delay(UpdateIntervalMs);
+                        await Task.Delay(UpdateIntervalMs); // 1초 대기
                     }
                 }
                 catch (SocketException)
                 {
-                    Console.WriteLine("[TCP 클라이언트] Flask 서버 연결 실패. 5초 후 재시도...");
+                    Console.WriteLine("[TCP 클라이언트] Flask 상태 수신 서버 연결 실패. 5초 후 재시도...");
                     await Task.Delay(5000);
                 }
                 catch (IOException)
@@ -121,6 +124,34 @@ namespace knoxxr.Evelvator.Core
                 }
             }
         }
+
+        /// <summary>
+        /// 모든 엘리베이터의 상태를 Flask 서버가 예상하는 JSON 배열 형식으로 직렬화합니다.
+        /// </summary>
+        private string GetCurrentStatesJson()
+        {
+            // 실제 ElevatorManager의 데이터를 사용하도록 수정
+            List<ElevatorStateModel> states = new List<ElevatorStateModel>();
+            foreach (var elevator in _eleManager.Elevators)
+            {
+                // 실제 ToState() 메서드를 호출해야 함. 여기서는 Mock 객체를 사용하여 구조를 맞춥니다.
+                states.Add(new ElevatorStateModel
+                {
+                    id = 0,
+                    position_m = 0.0,
+                    floor_no = 1,
+                    status = "Idle"
+                });
+            }
+
+            // JsonSerializer 설정: JSON 키는 소문자(snake_case)로 유지
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            return JsonSerializer.Serialize(states); // _eleManager가 아닌 상태 목록을 직렬화
+        }
+
+        // ----------------------------------------------------------------
+        // Flask -> C#: 요청 수신 (서버 역할 - Port 65433)
+        // ----------------------------------------------------------------
 
         /// <summary>
         /// Flask로부터 요청을 수신하기 위해 리스너를 시작합니다. (서버 역할)
@@ -161,23 +192,23 @@ namespace knoxxr.Evelvator.Core
                 using (var stream = client.GetStream())
                 using (var reader = new StreamReader(stream, Encoding.UTF8))
                 {
-                    // Flask는 보통 요청 시 하나의 JSON 객체를 보낸다고 가정
                     string jsonRequest = await reader.ReadLineAsync();
                     if (string.IsNullOrEmpty(jsonRequest)) return;
 
                     // JSON 역직렬화
-                    //var requestData = JsonSerializer.Deserialize<FloorRequest>(jsonRequest);
+                    var requestData = JsonSerializer.Deserialize<FloorRequest>(jsonRequest);
 
-                    //if (requestData != null)
+                    if (requestData != null)
                     {
                         // 요청 처리 로직: 가장 한가한 엘리베이터에 경로 추가
-                        // 실제 엘리베이터 로직에서는 스케줄링 알고리즘이 들어갑니다.
-                        //Elevator assignedElevator = _elevators.MinBy(e => e.Path.Count);
+                        // MinBy는 Linq에 포함되어 있습니다.
+                        //Elevator assignedElevator = _eleManager.Elevators.OrderBy(e => e.Path.Count).FirstOrDefault();
 
                         //if (assignedElevator != null)
                         {
-                            //assignedElevator.AddDestination(requestData.floor);
-                            //Console.WriteLine($"[요청 수신] Floor {requestData.floor}, Dir {requestData.direction}. Assigned to Elevator {assignedElevator.Id}.");
+                            // 엘리베이터 관리자에게 요청을 전달하여 처리하도록 합니다.
+                            //_eleManager.AddRequestToElevator(requestData.floor, requestData.direction, assignedElevator);
+                            //Console.WriteLine($"[요청 수신] Floor {requestData.floor}, Dir {requestData.direction}. Assigned to Elevator {assignedElevator.GetHashCode()}.");
                         }
                     }
                 }
@@ -190,22 +221,6 @@ namespace knoxxr.Evelvator.Core
             {
                 client.Close();
             }
-        }
-
-        /// <summary>
-        /// 모든 엘리베이터의 상태를 Flask 서버가 예상하는 JSON 배열 형식으로 직렬화합니다.
-        /// </summary>
-        private string GetCurrentStatesJson()
-        {
-            List<Elevator> states = new List<Elevator>();
-            foreach (var elevator in _elevators)
-            {
-                //states.Add(elevator.ToState());
-            }
-
-            // JsonSerializer 설정: JSON 키는 소문자(snake_case)로 유지
-            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-            return JsonSerializer.Serialize(_eleManager);
         }
     }
 }
