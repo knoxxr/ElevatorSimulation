@@ -9,20 +9,23 @@ namespace knoxxr.Evelvator.Sim
         // (예: 1000ms ~ 3000ms 사이의 랜덤 간격 생성)
         public int DensityFactor { get; set; } = 100000;
         public double GroundFloorRatio { get; set; } = 0.5; // 50% 비율
-        private readonly int _minIntervalMs = 5000;
+        private readonly int _minIntervalMs = 3000;
         private readonly Random _random = new Random();
-
         private Building _building;
 
         protected Dictionary<int, Person> People = new Dictionary<int, Person>();
         public Sim_ReqGenerator(Building building)
         {
             _building = building;
-
-            //Task taskA = Task.Run(() => RunTaskMethod());
+            InitScheuler();
         }
-
-        public async Task RunTaskMethod()
+        private void InitScheuler()
+        {
+            Thread SchedulerThread = new Thread(ScheduleElevator);
+            SchedulerThread.IsBackground = false;
+            SchedulerThread.Start();
+        }
+        public void ScheduleElevator()
         {
             while (true)
             {
@@ -36,36 +39,18 @@ namespace knoxxr.Evelvator.Sim
                         Console.WriteLine("오류: 유효하지 않은 층 선택됨.");
                         continue;
                     }
-
-                    if (_building == null)
-                    {
-                        Console.WriteLine("오류: 유효하지 않은 층 선택됨.");
-                        continue;
-                    }
                     Person newPerson = new Person(floor, _building);
-                    if (newPerson == null)
-                    {
-                        Console.WriteLine("오류: 유효하지 않은 층 선택됨.");
-                        continue;
-                    }
-
-                    if (People == null)
-                    {
-                        Console.WriteLine("오류: 유효하지 않은 층 선택됨.");
-                        continue;
-                    }
 
                     newPerson.EventRequestCompleted += OnEventRequestCompleted;
                     People.Add(newPerson.Id, newPerson);
 
                     Console.WriteLine($"[생성됨] {newPerson}");
-                    await Task.Delay(interval);
+                    Thread.Sleep(interval);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"오류 발생: {ex.Message}");
                 }
-               
             }
         }
 

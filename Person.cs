@@ -62,7 +62,7 @@ namespace knoxxr.Evelvator.Sim
 
         private void InitiaizeElevatorEvent()
         {
-            foreach (var ele in _elevatorManager.Elevators.Values)
+            foreach (var ele in _elevatorManager._elevators.Values)
             {
                 ele.EventArrivedFloor += Elevator_OnArrivedFloor;
                 ele.EventDoorOpened += Elevator_OnDoorOpened;
@@ -134,7 +134,7 @@ namespace knoxxr.Evelvator.Sim
 
         protected Elevator CheckArrivedElevatorAtCurrentFloor()
         {
-            foreach (var ele in _elevatorManager.Elevators.Values)
+            foreach (var ele in _elevatorManager._elevators.Values)
             {
                 if (ele._currentFloor != null
                 && ele._currentFloor.FloorNo == _curFloor.FloorNo

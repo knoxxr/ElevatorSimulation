@@ -22,12 +22,6 @@ namespace knoxxr.Evelvator.Core
             InitFloors();
             InitElevatorManager();
             LinkFloorandElevator();
-            InitSimManager();
-        }
-
-        protected void InitSimManager()
-        {
-            simMgr = new Sim_ReqGenerator(this);
         }
 
         protected void LinkFloorandElevator()

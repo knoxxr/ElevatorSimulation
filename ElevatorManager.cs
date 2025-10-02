@@ -6,67 +6,49 @@ namespace knoxxr.Evelvator.Core
 {
     public class ElevatorManager
     {
-        public Dictionary<int, Elevator> Elevators = new Dictionary<int, Elevator>();
-        public Dictionary<int, Floor> Floors;
-        public Dictionary<int, Person> People = new Dictionary<int, Person>();
-
-        public List<PersonRequest> Requests = new List<PersonRequest>();
-
-        public Building _building = null;
-
-        private UISocket uISocket;
+        public Dictionary<int, Elevator> _elevators = new Dictionary<int, Elevator>();
+        public Dictionary<int, Person> _people = new Dictionary<int, Person>();
+        public List<PersonRequest> _requests = new List<PersonRequest>();
+        public Dictionary<int, Floor>? _floors = null;
+        public Building? _building = null;
+        private ElevatorAPI? _api = null;
 
         public ElevatorManager(Building building)
         {
-            this._building = building;
+            _building = building;
         }
         public void Initialize(Dictionary<int, Floor> floors, int totalElevator)
         {
-            Thread SchedulerThread = new Thread(ScanElevatorEvent);
-            SchedulerThread.IsBackground = true; // 백그라운드 스레드로 설정
+            InitFloorReqEvent(floors);
+            InitElevators(totalElevator);
+            InitAPI();
+            InitScheuler();
+            Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
+        }
+
+        private void InitScheuler()
+        {
+            Thread SchedulerThread = new Thread(ScheduleElevator);
+            SchedulerThread.IsBackground = false; 
             SchedulerThread.Start();
+        }
 
-            Floors = floors;
-            InitFloorReqEvent();
-
+        private void InitElevators(int totalElevator)
+        {
             for (int eleNo = 1; eleNo <= totalElevator; eleNo++)
             {
                 Elevator newElevator = new Elevator(eleNo, _building);
-                Elevators.Add(newElevator.Id, newElevator);
+                _elevators.Add(newElevator.Id, newElevator);
             }
-
-            uISocket = new UISocket(this);
-            uISocket.StartSimulationAsync();
-
-            Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
-
-           //InitUISocket().GetAwaiter().GetResult();
         }
-        
-        private async Task InitUISocket()
+        private void InitAPI()
         {
-           /*  // 시스템에서 JSON 직렬화를 위한 설정 확인 메시지
-            Console.WriteLine(".NET 엘리베이터 시뮬레이터 서버 시작 (Flask 통신).");
-
-            // Ctrl+C 입력 시 프로그램 종료를 위해 대기
-            var cts = new CancellationTokenSource();
-            Console.CancelKeyPress += (sender, eventArgs) =>
-            {
-                eventArgs.Cancel = true;
-                cts.Cancel();
-                Console.WriteLine("프로그램 종료 요청...");
-            };
-
-            var simulator = new ElevatorSimulationManager();
-
-            // 시뮬레이션 및 TCP 통신 시작 (이제 내부적으로 클라이언트/서버 역할 모두 수행)
-            await simulator.StartSimulationAsync();
-
-            // 프로그램이 종료될 때까지 대기
-            await Task.Delay(Timeout.Infinite, cts.Token); */
+            _api = new ElevatorAPI(this);
+            _api.Start();
         }
-        private void InitFloorReqEvent()
+        private void InitFloorReqEvent(Dictionary<int, Floor> floors)
         {
+            _floors = floors;
             //foreach (KeyValuePair<int, Floor> floor in Floors)
             //{
             //   floor.Value.EventReqUp += Floor_OnReqUp;
@@ -77,52 +59,20 @@ namespace knoxxr.Evelvator.Core
         }
         public void RequestElevator(PersonRequest request)
         {
-            Requests.Add(request);
+            _requests.Add(request);
             Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
         }
-        /*
-        public void Floor_OnReqUp(object sender, EventArgs e)
-        {
-            Floor reqFloor = ((FloorEventArgs)e).ReqFloor;
-            Requests.Add(new ElevatorRequest(RequestType.FloorRequest, reqFloor, null, Direction.Up));
-            //GetNearestElevator(reqFloor).Move(reqFloor);
-            Console.WriteLine($"Floor {reqFloor} requested UP. Nearest elevator is moving to the floor.");
-        }
-        public void Floor_OnReqDown(object sender, EventArgs e)
-        {
-            Floor reqFloor = ((FloorEventArgs)e).ReqFloor;
-            Requests.Add(new ElevatorRequest(RequestType.FloorRequest, reqFloor, null, Direction.Down));
-            //GetNearestElevator(reqFloor).Move(reqFloor);
-            Console.WriteLine($"Floor {reqFloor} requested DOWN. Nearest elevator is moving to the floor.");
-        }
-        public void Floor_OnCalcenUp(object sender, EventArgs e)
-        {
-            Floor reqFloor = ((FloorEventArgs)e).ReqFloor;
-            Requests.Add(new ElevatorRequest(RequestType.FloorCancel, reqFloor, null, Direction.Up));
-            //GetNearestElevator(reqFloor).Stop();
-
-            Console.WriteLine($"Floor {reqFloor} canceled UP request. Nearest elevator is stopping.");
-        }
-        public void Floor_OnCancelDown(object sender, EventArgs e)
-        {
-            Floor reqFloor = ((FloorEventArgs)e).ReqFloor;
-            Requests.Add(new ElevatorRequest(RequestType.FloorCancel, reqFloor, null, Direction.Down));
-            //GetNearestElevator(reqFloor).Stop();
-
-            Console.WriteLine($"Floor {reqFloor} canceled DOWN request. Nearest elevator is stopping.");
-        }
-        */
         public Elevator GetNearestElevator(Floor reqFloor)
         {
             return null;
         }
-        private void ScanElevatorEvent()
+        private void ScheduleElevator()
         {
             while (true)
             {
-                if (Requests.Count > 0)
+                if (_requests.Count > 0)
                 {
-                    var req = Requests[0];
+                    var req = _requests[0];
 
                     switch (req.ReqLocation)
                     {
@@ -144,18 +94,16 @@ namespace knoxxr.Evelvator.Core
                             break;
                     }
 
-                    Requests.RemoveAt(0);
+                    _requests.RemoveAt(0);
                 }
 
-                // Check each elevator's state and move them accordingly
-                //Console.WriteLine("Scheduler tick: Checking elevator states...");
-                Thread.Sleep(1000); // Simulate time delay
+                Thread.Sleep(500); // Simulate time delay
             }
         }
         
         protected Elevator SearchBestElevator(Floor reqFloor, Direction dir)
         {
-            foreach (var elevator in Elevators.Values)
+            foreach (var elevator in _elevators.Values)
             {
                 if (elevator.IsAvailable(reqFloor, dir))
                 {

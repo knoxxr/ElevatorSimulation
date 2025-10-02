@@ -28,11 +28,11 @@ namespace knoxxr.Evelvator.Core
         public void Initialize(ElevatorManager elevatorManager)
         {
             _eleMgr = elevatorManager;
-            InitiaizeElevatorEvent(_eleMgr.Elevators);
+            InitiaizeElevatorEvent(_eleMgr._elevators);
         }
         protected void InitiaizeElevatorEvent(Dictionary<int, Elevator> elevators)
         {
-            foreach (var ele in _eleMgr.Elevators.Values)
+            foreach (var ele in _eleMgr._elevators.Values)
             {
                 ele.EventArrivedFloor += Elevator_OnArrivedFloor;
                 ele.EventDoorOpened += Elevator_OnDoorOpened;
