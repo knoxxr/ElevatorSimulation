@@ -23,13 +23,13 @@ namespace knoxxr.Evelvator.Core
             InitElevators(totalElevator);
             InitAPI();
             InitScheuler();
-            Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
+            //Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
         }
 
         private void InitScheuler()
         {
             Thread SchedulerThread = new Thread(ScheduleElevator);
-            SchedulerThread.IsBackground = false; 
+            SchedulerThread.IsBackground = false;
             SchedulerThread.Start();
         }
 
@@ -60,7 +60,7 @@ namespace knoxxr.Evelvator.Core
         public void RequestElevator(PersonRequest request)
         {
             _requests.Add(request);
-            Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
+            //Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
         }
         public Elevator GetNearestElevator(Floor reqFloor)
         {
@@ -84,23 +84,22 @@ namespace knoxxr.Evelvator.Core
                             }
                             else
                             {
-                                Console.WriteLine($"[스케줄러] 요청된 {req.ReqFloor.FloorNo}층에 가장 적합한 엘리베이터가 없습니다.");
+                                //Console.WriteLine($"[스케줄러] 요청된 {req.ReqFloor.FloorNo}층에 가장 적합한 엘리베이터가 없습니다.");
                             }
-                            Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.ReqDirection.ToString()} 요청 감지됨.");
+                            //Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.ReqDirection.ToString()} 요청 감지됨.");
                             break;
                         case PersonLocation.Elevator:
-                            Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 요청 감지됨.");
+                            //Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 요청 감지됨.");
                             req.ReqElevator.ExecuteCallMission(req);
                             break;
                     }
 
                     _requests.RemoveAt(0);
                 }
-
                 Thread.Sleep(500); // Simulate time delay
             }
         }
-        
+
         protected Elevator SearchBestElevator(Floor reqFloor, Direction dir)
         {
             foreach (var elevator in _elevators.Values)
@@ -112,9 +111,11 @@ namespace knoxxr.Evelvator.Core
             }
             return null;
         }
+        
 
     }
 
+   
     public enum RequestType
     {
         FloorRequest,

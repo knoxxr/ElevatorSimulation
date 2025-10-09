@@ -5,12 +5,12 @@ namespace knoxxr.Evelvator.Core
 {
     public class Building
     {
-        public static int TotalGroundFloor = 30;
+        public static int TotalGroundFloor = 10;
         public static int TotalUndergroundFloor = 3;
         protected int TotalElevator = 2;
-        public Dictionary<int, Floor> Floors = new Dictionary<int, Floor>();
-        public ElevatorManager eleMgr = null;
-        public Sim_ReqGenerator simMgr = null;
+        public Dictionary<int, Floor> _floors = new Dictionary<int, Floor>();
+        public ElevatorManager _eleMgr = null;
+        public Sim_ReqGenerator _simMgr = null;
 
         public Building()
         {
@@ -26,9 +26,9 @@ namespace knoxxr.Evelvator.Core
 
         protected void LinkFloorandElevator()
         {
-            foreach (var floor in Floors.Values)
+            foreach (var floor in _floors.Values)
             {
-                floor.Initialize(eleMgr);
+                floor.Initialize(_eleMgr);
             }
         }
 
@@ -37,23 +37,23 @@ namespace knoxxr.Evelvator.Core
             for (int floorNo = 1; floorNo <= TotalGroundFloor; floorNo++)
             {
                 Floor newFloor = new Floor(floorNo);
-                Floors.Add(newFloor.FloorNo, newFloor);
+                _floors.Add(newFloor.FloorNo, newFloor);
             }
 
             for (int floorNo = -TotalUndergroundFloor; floorNo <= -1; floorNo++)
             {
                 Floor newFloor = new Floor(floorNo);
-                Floors.Add(newFloor.FloorNo, newFloor);
+                _floors.Add(newFloor.FloorNo, newFloor);
             }
 
-            Console.WriteLine($"Floors initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
+            //Console.WriteLine($"Floors initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
         }
 
         protected void InitElevatorManager()
         {
-            eleMgr = new ElevatorManager(this);
+            _eleMgr = new ElevatorManager(this);
 
-            eleMgr.Initialize(Floors, TotalElevator);
+            _eleMgr.Initialize(_floors, TotalElevator);
         }
     }
 }
