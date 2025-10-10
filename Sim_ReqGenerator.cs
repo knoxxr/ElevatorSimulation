@@ -14,7 +14,8 @@ namespace knoxxr.Evelvator.Sim
         private readonly Random _random = new Random();
         private Building _building;
 
-        public Dictionary<int, Person> _people = new Dictionary<int, Person>();
+        protected Dictionary<int, Person> _people = new Dictionary<int, Person>();
+        public Dictionary<int, Person> People { get { return _people; } }
         public Sim_ReqGenerator(Building? building)
         {
             _building = building;

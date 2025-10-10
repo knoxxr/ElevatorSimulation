@@ -20,14 +20,32 @@ namespace knoxxr.Evelvator.Sim
         private BackgroundWorker _worker;
         private int _finalResult;
         public PersonLocation _location = PersonLocation.Floor;
+        public PersonLocation Location
+        {
+            get { return _location; }
+        }
         private static int nextId = 1;
         private const int ButtonPressDelayMs = 1000; // 버튼 누르는 딜레이 (밀리초)
         public readonly int Id = Interlocked.Increment(ref nextId);
         public Floor _curFloor;
-        public Floor _targetFloor;
-        public PersonState _state = PersonState.Waiting;
+        public Floor CurrentFloor
+        {
+            get { return _curFloor; }
+        }
+        protected Floor _targetFloor;
+        public Floor TargetFloor
+        {
+            get { return _targetFloor; }
+        }
+        protected PersonState _state = PersonState.Waiting;
+        public PersonState State
+        { get { return _state; } }
         private ElevatorManager _elevatorManager;
         private Elevator _currentElevator = null;
+        public Elevator CurrentElevator
+        {
+            get { return _currentElevator; }
+        }
         public PersonRequest _curRequest;
         private Building _building;
         public Person(Floor curFloor, Building building)
@@ -138,8 +156,8 @@ namespace knoxxr.Evelvator.Sim
             {
                 if (ele._currentFloor != null
                 && ele._currentFloor.FloorNo == _curFloor.FloorNo
-                && (ele._state == ElevatorState.DoorOpened
-                || ele._state == ElevatorState.DoorWaiting)
+                && (ele.State == ElevatorState.DoorOpened
+                || ele.State == ElevatorState.DoorWaiting)
                 && ele.IsMaximumOccupancy() == false)
                 {
                     return ele;
@@ -262,7 +280,7 @@ namespace knoxxr.Evelvator.Sim
             int floor;
             do
             {
-                floor = rand.Next(Building.TotalUndergroundFloor, Building.TotalGroundFloor + 1);
+                floor = rand.Next(Building.TotalUndergroundFloor, Building.TotalGroundFloor);
             } while (floor == excludeFloor.FloorNo); // 출발지와 목적지가 같지 않도록
 
             return floor;

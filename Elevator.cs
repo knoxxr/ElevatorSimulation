@@ -28,7 +28,10 @@ namespace knoxxr.Evelvator.Core
         }
         public int MaximumOccupancy = 15;
         public int Height = 2700; // 엘리베이터 높이 (mm)
-        public ElevatorState _state = ElevatorState.Idle;
+        protected ElevatorState _state = ElevatorState.Idle;
+        public ElevatorState State
+        { get { return _state; } }
+
         // 가정: Elevator 클래스 내부에 정의됩니다.
         // 문이 열리는 데 걸리는 시간 (ms)
         private const int DoorOperationTimeMs = 2000;
