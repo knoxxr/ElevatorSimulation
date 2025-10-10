@@ -10,7 +10,12 @@ namespace knoxxr.Evelvator.Core
         public event EventHandler<FloorEventArgs> EventCancelDown;
         public static readonly int Height = 3200; // 층당 높이 (mm)
         public int Position; // 층 위치 (mm)
-        public int FloorNo;
+        protected int _floorNo;
+        public int FloorNo
+        {
+            get { return _floorNo; }
+        }
+
 
         public Dictionary<int, Elevator> _elevators;
 
@@ -21,7 +26,7 @@ namespace knoxxr.Evelvator.Core
 
         public Floor(int floorNo)
         {
-            FloorNo = floorNo;
+            _floorNo = floorNo;
             Position = (floorNo - 1) * Height;
         }
 
@@ -44,7 +49,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                Logger.Info($"[Floor {FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
+                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
             }
         }
         private void Elevator_OnDoorOpened(object sender, EventArgs e)
@@ -52,7 +57,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                Logger.Info($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
             }
         }
         private void Elevator_OnDoorClosed(object sender, EventArgs e)
@@ -60,7 +65,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                Logger.Info($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
             }
         }
 
@@ -68,7 +73,7 @@ namespace knoxxr.Evelvator.Core
         {
             BtnUp.Press();
             OnReqUp(new FloorEventArgs(this));
-            Logger.Info($"Floor {FloorNo} UP button pressed.");
+            Logger.Info($"Floor {_floorNo} UP button pressed.");
         }
 
         public void CancelUpSide()
@@ -82,42 +87,42 @@ namespace knoxxr.Evelvator.Core
         {
             BtnDown.Press();
             OnReqDown(new FloorEventArgs(this));
-            Logger.Info($"Floor {FloorNo} DOWN button pressed.");
+            Logger.Info($"Floor {_floorNo} DOWN button pressed.");
         }
 
         public void CancelDownSide()
         {
             BtnDown.Cancel();
             OnCancelDown(new FloorEventArgs(this));
-            Logger.Info($"Floor {FloorNo} DOWN button canceled.");
+            Logger.Info($"Floor {_floorNo} DOWN button canceled.");
         }
 
         public void OnReqUp(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventReqUp?.Invoke(this, args);
-            Logger.Info($"Floor {FloorNo} UP button pressed.");
+            Logger.Info($"Floor {_floorNo} UP button pressed.");
         }
 
         public void OnReqDown(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventReqDown?.Invoke(this, args);
-            Logger.Info($"Floor {FloorNo} DOWN button pressed.");
+            Logger.Info($"Floor {_floorNo} DOWN button pressed.");
         }
 
         public void OnCancelUp(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventCancelUp?.Invoke(this, args);
-            Logger.Info($"Floor {FloorNo} UP button canceled.");
+            Logger.Info($"Floor {_floorNo} UP button canceled.");
         }
 
         public void OnCancelDown(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventCancelDown?.Invoke(this, args);
-            Logger.Info($"Floor {FloorNo} DOWN button canceled.");
+            Logger.Info($"Floor {_floorNo} DOWN button canceled.");
         }
     }
 

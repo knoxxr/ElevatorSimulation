@@ -14,8 +14,8 @@ namespace knoxxr.Evelvator.Sim
         private readonly Random _random = new Random();
         private Building _building;
 
-        protected Dictionary<int, Person> _people = new Dictionary<int, Person>();
-        public Sim_ReqGenerator(Building building)
+        public Dictionary<int, Person> _people = new Dictionary<int, Person>();
+        public Sim_ReqGenerator(Building? building)
         {
             _building = building;
             InitScheuler();
@@ -159,7 +159,7 @@ namespace knoxxr.Evelvator.Sim
             {
                 if (person._location == PersonLocation.Floor)
                 {
-                    orderedText[person._curFloor.FloorNo]+= string.Format($"(P{person.Id})");
+                    orderedText[person._curFloor.FloorNo] += string.Format($"(P{person.Id})");
 
                 }
             }

@@ -22,6 +22,10 @@ namespace knoxxr.Evelvator.Core
         private readonly object _pathLock = new object();
         public int Id;
         public Floor _currentFloor;
+        public Floor CurrentFloor
+        {
+            get { return _currentFloor; }
+        }
         public int MaximumOccupancy = 15;
         public int Height = 2700; // 엘리베이터 높이 (mm)
         public ElevatorState _state = ElevatorState.Idle;

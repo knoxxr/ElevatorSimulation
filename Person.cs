@@ -89,7 +89,7 @@ namespace knoxxr.Evelvator.Sim
                 Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
                 ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
             }
-            else if (ele._currentFloor.FloorNo == _targetFloor.FloorNo && _state == PersonState.InElevator)
+            else if (_state == PersonState.InElevator && ele._currentFloor.FloorNo == _targetFloor.FloorNo)
             {
                 Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 목적지에 도착했습니다.");
                 ChangePersonState(PersonState.CheckDestinationReached);
