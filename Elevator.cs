@@ -4,6 +4,10 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Reflection;
+using log4net;
+using log4net.Config;
+using System.Diagnostics;
 
 namespace knoxxr.Evelvator.Core
 {
@@ -43,7 +47,7 @@ namespace knoxxr.Evelvator.Core
 
         public Building _building;
 
-        public List<Floor> MovingPath = new List<Floor>();
+        private List<Floor> MovingPath = new List<Floor>();
 
         public Elevator(int id, Building building)
         {
@@ -61,7 +65,7 @@ namespace knoxxr.Evelvator.Core
 
             if (!_worker.IsBusy)
             {
-                //Console.WriteLine("--- BackgroundWorker 작업 시작 ---");
+                Logger.Info("--- BackgroundWorker 작업 시작 ---");
                 // 작업을 시작합니다. 인수로 10을 전달합니다.
                 _worker.RunWorkerAsync();
             }
@@ -69,7 +73,7 @@ namespace knoxxr.Evelvator.Core
 
         public async Task ExecuteCallMission(PersonRequest req)
         {
-            AddMovePath(req);            
+            AddMovePath(req);
 
             ChangeElevatorState(ElevatorState.Idle);
         }
@@ -121,7 +125,7 @@ namespace knoxxr.Evelvator.Core
                             {
                                 targetPosition = GetNearestFloorPosition();
                                 // MovingPath.Count가 0이므로, 정지 목표로 처리합니다.
-                                //Console.WriteLine($"[ID {Id}] **경로 소진**! 가장 가까운 층 ({targetPosition:F2}m)으로 감속합니다.");
+                                Logger.Info($"[ID {Id}] **경로 소진**! 가장 가까운 층 ({targetPosition:F2}m)으로 감속합니다.");
                             }
                             // lock 블록 종료 (이동 루프 계산에 필요한 데이터 획득)
                         }
@@ -182,7 +186,7 @@ namespace knoxxr.Evelvator.Core
                             Console.WriteLine($"[ID {Id}] CalulateCurrentFloorNumber 중 오류: {ex.Message}");
                         }
 
-                        //Console.WriteLine($"[ID {Id}] / [이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m, 목표층 : {targetFloorNo}, 현재 층수 : {_currentFloor.FloorNo}, 방향 : {CurrentDirection.ToString()}");
+                        Logger.Info($"[ID {Id}] / [이동] 위치: {CurrentPosition:F2}m, 속도: {currentVelocity:F2}m/s, 목표: {targetPosition:F2}m, 목표층 : {targetFloorNo}, 현재 층수 : {_currentFloor.FloorNo}, 방향 : {CurrentDirection.ToString()}");
 
                         // 4. 시뮬레이션 지연 (BackgroundWorker에서는 Thread.Sleep 사용)
                         Thread.Sleep(updateIntervalMs);
@@ -221,7 +225,7 @@ namespace knoxxr.Evelvator.Core
                                     Console.WriteLine($"[ID {Id}] 경로 제거 중 오류: {ex.Message}");
                                 }
 
-                                //Console.WriteLine($"[ID {Id}] / [경로 도착] {targetFloorNo}층 도착! 다음 목표 확인.");
+                                Logger.Info($"[ID {Id}] / [경로 도착] {targetFloorNo}층 도착! 다음 목표 확인.");
 
                                 try
                                 {
@@ -235,7 +239,7 @@ namespace knoxxr.Evelvator.Core
                                 }
                                 catch (Exception ex)
                                 {
-                                    Console.WriteLine($"[ID {Id}] 문 제어 중 오류: {ex.Message}");
+                                    Logger.Error($"[ID {Id}] 문 제어 중 오류: {ex.Message}");
                                 }
                             }
 
@@ -256,7 +260,7 @@ namespace knoxxr.Evelvator.Core
             }
             catch (Exception ex) // TaskCanceledException 대신 일반 Exception 처리
             {
-                Console.WriteLine($"[ID {Id}] 작업자 오류 발생: {ex.Message}");
+                Logger.Error($"[ID {Id}] 작업자 오류 발생: {ex.Message}");
             }
             finally
             {
@@ -267,7 +271,7 @@ namespace knoxxr.Evelvator.Core
 
         public void Stop()
         {
-            //Console.WriteLine($"[ID {Id}] / [요청] 이동 취소 요청됨.");
+            Logger.Info($"[ID {Id}] / [요청] 이동 취소 요청됨.");
             CancelMovement();
         }
 
@@ -294,7 +298,7 @@ namespace knoxxr.Evelvator.Core
         {
             // 문이 이미 열려 있는지 확인하는 로직이 있다면 여기에 추가
 
-            //Console.WriteLine($"[ID {Id}] 문 열림 시작...");
+            Logger.Info($"[ID {Id}] 문 열림 시작...");
             ChangeElevatorState(ElevatorState.DoorOpenningStarting);
             await Task.Delay(100);
 
@@ -303,7 +307,7 @@ namespace knoxxr.Evelvator.Core
             await Task.Delay(DoorOperationTimeMs);
 
             // 상태 업데이트 (예: DoorState = DoorState.Open)
-            //Console.WriteLine($"[ID {Id}] 문 열림 완료 (현재 층: {_currentFloor.FloorNo}).");
+            Logger.Info($"[ID {Id}] 문 열림 완료 (현재 층: {_currentFloor.FloorNo}).");
             ChangeElevatorState(ElevatorState.DoorOpened);
             OnDoorOpened(new ElevatorEventArgs(this));
         }
@@ -312,7 +316,7 @@ namespace knoxxr.Evelvator.Core
         {
             // 문이 이미 열려 있는지 확인하는 로직이 있다면 여기에 추가
 
-            //Console.WriteLine($"[ID {Id}] 문 열린후 대기 시작...");
+            Logger.Info($"[ID {Id}] 문 열린후 대기 시작...");
             ChangeElevatorState(ElevatorState.DoorWaitingFinish);
             await Task.Delay(100);
 
@@ -321,7 +325,7 @@ namespace knoxxr.Evelvator.Core
             await Task.Delay(DoorOpenWaitTimeMs);
 
             // 상태 업데이트 (예: DoorState = DoorState.Open)
-            //Console.WriteLine($"[ID {Id}] 문 열림후 대기 완료 (현재 층: {_currentFloor.FloorNo}).");
+            Logger.Info($"[ID {Id}] 문 열림후 대기 완료 (현재 층: {_currentFloor.FloorNo}).");
             ChangeElevatorState(ElevatorState.DoorWaitingFinish);
         }
 
@@ -333,7 +337,7 @@ namespace knoxxr.Evelvator.Core
         {
             // 문이 이미 닫혀 있는지 확인하는 로직이 있다면 여기에 추가
 
-            //Console.WriteLine($"[ID {Id}] 문 닫힘 시작...");
+            Logger.Info($"[ID {Id}] 문 닫힘 시작...");
             ChangeElevatorState(ElevatorState.DoorClosingStarted);
 
             // 문 닫힘 시뮬레이션
@@ -341,7 +345,7 @@ namespace knoxxr.Evelvator.Core
             await Task.Delay(DoorOperationTimeMs);
 
             // 상태 업데이트 (예: DoorState = DoorState.Closed)
-            //Console.WriteLine($"[ID {Id}] 문 닫힘 완료.");
+            Logger.Info($"[ID {Id}] 문 닫힘 완료.");
             ChangeElevatorState(ElevatorState.DoorClosed);
             OnDoorClosed(new ElevatorEventArgs(this));
         }
@@ -353,9 +357,9 @@ namespace knoxxr.Evelvator.Core
 
         protected void ChangeElevatorState(ElevatorState state)
         {
-            if(_state == state) return;
+            if (_state == state) return;
             _state = state;
-            //Console.WriteLine($"[ID {Id}] 엘리베이터 상태 변경: {_state}");
+            Logger.Info($"[ID {Id}] 엘리베이터 상태 변경: {_state}");
         }
 
         /// <summary>
@@ -408,27 +412,27 @@ namespace knoxxr.Evelvator.Core
         {
             ElevatorEventArgs args = new ElevatorEventArgs(this);
             EventChangeCurrentFloor?.Invoke(this, args);
-            //Console.WriteLine($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층으로 이동 중입니다.");
+            Logger.Info($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층으로 이동 중입니다.");
         }
         public void OnArrived(ElevatorEventArgs e)
         {
             ElevatorEventArgs args = new ElevatorEventArgs(this);
             EventArrivedFloor?.Invoke(this, args);
-            //Console.WriteLine($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층에 도착했습니다.");
+            Logger.Info($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층에 도착했습니다.");
         }
 
         public void OnDoorOpened(ElevatorEventArgs e)
         {
             ElevatorEventArgs args = new ElevatorEventArgs(this);
             EventArrivedFloor?.Invoke(this, args);
-            //Console.WriteLine($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층에서 문이 열렸습니다.");
+            Logger.Info($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층에서 문이 열렸습니다.");
         }
 
         public void OnDoorClosed(ElevatorEventArgs e)
         {
             ElevatorEventArgs args = new ElevatorEventArgs(this);
             EventArrivedFloor?.Invoke(this, args);
-            //Console.WriteLine($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층에서 문이 닫혔습니다.");
+            Logger.Info($"[ID {Id}] 엘리베이터가 {e.Elevator._currentFloor.FloorNo}층에서 문이 닫혔습니다.");
         }
 
         public void AddPerson(Person person)
@@ -436,11 +440,11 @@ namespace knoxxr.Evelvator.Core
             if (IsMaximumOccupancy() == false)
             {
                 _people.Add(person);
-                //Console.WriteLine($"[ID {Id}] 엘리베이터에 {person.Id} 탑승. 현재 탑승 인원: {People.Count}");
+                Logger.Info($"[ID {Id}] 엘리베이터에 {person.Id} 탑승. 현재 탑승 인원: {_people.Count}");
             }
             else
             {
-                //Console.WriteLine($"[ID {Id}] 엘리베이터가 만원입니다. {person.Id} 탑승 불가.");
+                Logger.Info($"[ID {Id}] 엘리베이터가 만원입니다. {person.Id} 탑승 불가.");
             }
         }
 
@@ -449,11 +453,11 @@ namespace knoxxr.Evelvator.Core
             if (_people.Contains(person))
             {
                 _people.Remove(person);
-                //Console.WriteLine($"[ID {Id}] 엘리베이터에서 {person} 하차. 현재 탑승 인원: {People.Count}");
+                Logger.Info($"[ID {Id}] 엘리베이터에서 {person} 하차. 현재 탑승 인원: {_people.Count}");
             }
             else
             {
-                //Console.WriteLine($"[ID {Id}] 엘리베이터에 {person} 이(가) 없습니다.");
+                Logger.Info($"[ID {Id}] 엘리베이터에 {person} 이(가) 없습니다.");
             }
         }
 
@@ -466,18 +470,18 @@ namespace knoxxr.Evelvator.Core
         {
             if (floorNo < Building.TotalUndergroundFloor || floorNo > Building.TotalGroundFloor)
             {
-                //Console.WriteLine($"[ID {Id}] {floorNo}층은 유효한 층이 아닙니다.");
+                Logger.Info($"[ID {Id}] {floorNo}층은 유효한 층이 아닙니다.");
                 return;
             }
             // 버튼이 이미 눌려 있는지 확인
             if (Buttons.Exists(b => b == Buttons[floorNo - 1] && b.Pressed))
             {
-                //Console.WriteLine($"[ID {Id}] {floorNo}층 버튼이 이미 눌려 있습니다. 중복 요청 무시됨.");
+                Logger.Info($"[ID {Id}] {floorNo}층 버튼이 이미 눌려 있습니다. 중복 요청 무시됨.");
                 return;
             }
 
             Buttons[floorNo - 1].Press();
-            //Console.WriteLine($"[ID {Id}] {floorNo}층 버튼이 눌렸습니다.");
+            Logger.Info($"[ID {Id}] {floorNo}층 버튼이 눌렸습니다.");
 
             // 버튼이 눌렸을 때의 추가 로직 (예: 이동 요청 추가 등)을 여기에 구현
         }
@@ -486,22 +490,22 @@ namespace knoxxr.Evelvator.Core
         {
             if (floorNo < Building.TotalUndergroundFloor || floorNo > Building.TotalGroundFloor)
             {
-                //Console.WriteLine($"[ID {Id}] {floorNo}층은 유효한 층이 아닙니다.");
+                Logger.Info($"[ID {Id}] {floorNo}층은 유효한 층이 아닙니다.");
                 return;
             }
             // 버튼이 눌려 있지 않은지 확인
             if (Buttons.Exists(b => b == Buttons[floorNo - 1] && !b.Pressed))
             {
-                //Console.WriteLine($"[ID {Id}] {floorNo}층 버튼이 이미 취소되어 있습니다. 중복 요청 무시됨.");
+                Logger.Info($"[ID {Id}] {floorNo}층 버튼이 이미 취소되어 있습니다. 중복 요청 무시됨.");
                 return;
             }
 
             Buttons[floorNo - 1].Cancel();
-            //Console.WriteLine($"[ID {Id}] {floorNo}층 버튼이 취소되었습니다.");
+            Logger.Info($"[ID {Id}] {floorNo}층 버튼이 취소되었습니다.");
 
             // 버튼이 취소되었을 때의 추가 로직 (예: 이동 요청 제거 등)을 여기에 구현
         }
-        
+
         public void AddMovePath(PersonRequest request)
         {
             // request가 null이거나, ReqLocation이 정의되지 않은 경우 등을 처리할 수 있습니다.
@@ -523,13 +527,13 @@ namespace knoxxr.Evelvator.Core
             {
                 if (MovingPath.Exists(f => f.FloorNo == floor.FloorNo))
                 {
-                    //Console.WriteLine($"[ID {Id}] {floor.FloorNo}층이 이미 경로에 포함되어 있습니다. 중복 추가 무시됨.");
+                    Logger.Info($"[ID {Id}] {floor.FloorNo}층이 이미 경로에 포함되어 있습니다. 중복 추가 무시됨.");
                     return;
                 }
 
                 MovingPath.Add(floor);
 
-                switch(dir)
+                switch (dir)
                 {
                     case Direction.Up:
                         MovingPath.Sort((f1, f2) => f1.FloorNo.CompareTo(f2.FloorNo));
@@ -540,7 +544,7 @@ namespace knoxxr.Evelvator.Core
                     case Direction.None:
                         break;
                 }
-                //Console.WriteLine($"[ID {Id}] {floor.FloorNo}층이 이동 경로에 추가되었습니다.");
+                Logger.Info($"[ID {Id}] {floor.FloorNo}층이 이동 경로에 추가되었습니다.");
             }
         }
     }

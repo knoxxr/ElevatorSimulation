@@ -35,7 +35,7 @@ namespace knoxxr.Evelvator.Sim
             _building = building;
             ChangeCurrentFloor(curFloor);
             Initialize();
-            //Console.WriteLine($"Person created at Floor {_curFloor.FloorNo}.");
+            Logger.Info($"Person created at Floor {_curFloor.FloorNo}.");
         }
 
         public void Initialize()
@@ -54,7 +54,7 @@ namespace knoxxr.Evelvator.Sim
 
             if (!_worker.IsBusy)
             {
-                //Console.WriteLine("--- BackgroundWorker 작업 시작 ---");
+                Logger.Info("--- BackgroundWorker 작업 시작 ---");
                 // 작업을 시작합니다. 인수로 10을 전달합니다.
                 _worker.RunWorkerAsync();
             }
@@ -77,7 +77,7 @@ namespace knoxxr.Evelvator.Sim
             if (_location == PersonLocation.Elevator && _currentElevator.Id == ele.Id)
             {
                 ChangeCurrentFloor(ele._currentFloor);
-                //Console.WriteLine($"[Person {Id} in Elevator {_currentElevator.Id}] 현재 층이 {_curFloor.FloorNo}로 변경되었습니다.");
+                Logger.Info($"[Person {Id} in Elevator {_currentElevator.Id}] 현재 층이 {_curFloor.FloorNo}로 변경되었습니다.");
             }
         }
 
@@ -86,12 +86,12 @@ namespace knoxxr.Evelvator.Sim
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling))
             {
-                //Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
+                Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
                 ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
             }
             else if (ele._currentFloor.FloorNo == _targetFloor.FloorNo && _state == PersonState.InElevator)
             {
-                //Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 목적지에 도착했습니다.");
+                Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}이(가) 목적지에 도착했습니다.");
                 ChangePersonState(PersonState.CheckDestinationReached);
             }
         }
@@ -101,12 +101,12 @@ namespace knoxxr.Evelvator.Sim
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling || _state == PersonState.Waiting))
             {
-                //Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
                 ChangePersonState(PersonState.GetIn);
             }
             else if (ele._currentFloor.FloorNo == _targetFloor.FloorNo && _state == PersonState.InElevator)
             {
-                //Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
                 ChangePersonState(PersonState.GetOut);
             }
         }
@@ -116,12 +116,12 @@ namespace knoxxr.Evelvator.Sim
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor.FloorNo == _curFloor.FloorNo && (_state == PersonState.Calling || _state == PersonState.Waiting))
             {
-                //Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
                 ChangePersonState(PersonState.Waiting);
             }
             else if (ele._currentFloor.FloorNo == _targetFloor.FloorNo && _state == PersonState.InElevator)
             {
-                //Console.WriteLine($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                Logger.Info($"[Person {Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
                 ChangePersonState(PersonState.InElevator);
             }
         }
@@ -129,7 +129,7 @@ namespace knoxxr.Evelvator.Sim
         public void ChangeLocation(PersonLocation newLocation)
         {
             _location = newLocation;
-            //Console.WriteLine($"Person {Id} location changed to {_location}.");
+            Logger.Info($"Person {Id} location changed to {_location}.");
         }
 
         protected Elevator CheckArrivedElevatorAtCurrentFloor()
@@ -191,7 +191,7 @@ namespace knoxxr.Evelvator.Sim
                         ChangePersonState(PersonState.Completed);
                         ChangeLocation(PersonLocation.Floor);
                         OnRequestCompleted();
-                        //Console.WriteLine($"Person {Id} has completed their journey.");
+                        Logger.Info($"Person {Id} has completed their journey.");
                         break;
                     case PersonState.Completed:
                         // 완료 상태에서는 아무 작업도 하지 않음
@@ -223,7 +223,7 @@ namespace knoxxr.Evelvator.Sim
             };
 
             _curRequest = newreq;
-            //Console.WriteLine($"Person {Id} is creating floor request: {newreq}");
+            Logger.Info($"Person {Id} is creating floor request: {newreq}");
             _elevatorManager.RequestElevator(newreq);
         }
 
@@ -240,7 +240,7 @@ namespace knoxxr.Evelvator.Sim
             };
 
             _curRequest = newreq;
-            //Console.WriteLine($"Person {Id} is creating elevator request: {newreq}");
+            Logger.Info($"Person {Id} is creating elevator request: {newreq}");
             _elevatorManager.RequestElevator(newreq);
         }
 
@@ -248,11 +248,11 @@ namespace knoxxr.Evelvator.Sim
         {
             if (_curFloor.FloorNo == _curRequest.TargetFloor.FloorNo)
             {
-                //Console.WriteLine($"Person {Id} has arrived at the target floor {_curFloor.FloorNo}.");
+                Logger.Info($"Person {Id} has arrived at the target floor {_curFloor.FloorNo}.");
                 return true;
             }
 
-            //Console.WriteLine($"Person {Id} has not yet arrived at the target floor {_curRequest.TargetFloor.FloorNo}. Current floor: {_curFloor.FloorNo}.");
+            Logger.Info($"Person {Id} has not yet arrived at the target floor {_curRequest.TargetFloor.FloorNo}. Current floor: {_curFloor.FloorNo}.");
             return false;
         }
 
@@ -271,7 +271,7 @@ namespace knoxxr.Evelvator.Sim
         private void ChangePersonState(PersonState newState)
         {
             _state = newState;
-            //Console.WriteLine($"Person {Id} state changed to {_state}.");
+            Logger.Info($"Person {Id} state changed to {_state}.");
         }
         public override string ToString()
         {
@@ -384,7 +384,7 @@ namespace knoxxr.Evelvator.Sim
             DirectionEventArgs args = new DirectionEventArgs(Direction.Up);
             EventReqUp?.Invoke(this, args);
 
-            //Console.WriteLine($"Person {Id} requested UP at Floor {_curFloor.FloorNo}.");
+            Logger.Info($"Person {Id} requested UP at Floor {_curFloor.FloorNo}.");
         }
 
         public void OnReqlDown()
@@ -392,7 +392,7 @@ namespace knoxxr.Evelvator.Sim
             DirectionEventArgs args = new DirectionEventArgs(Direction.Down);
             EventReqDown?.Invoke(this, args);
 
-            //Console.WriteLine($"Person {Id} requested DOWN at Floor {_curFloor.FloorNo}.");
+            Logger.Info($"Person {Id} requested DOWN at Floor {_curFloor.FloorNo}.");
         }
 
         public void OnCancellUp()
@@ -400,7 +400,7 @@ namespace knoxxr.Evelvator.Sim
             DirectionEventArgs args = new DirectionEventArgs(Direction.Up);
             EventCancelUp?.Invoke(this, args);
 
-            //Console.WriteLine($"Person {Id} canceled UP request at Floor {_curFloor.FloorNo}.");
+            Logger.Info($"Person {Id} canceled UP request at Floor {_curFloor.FloorNo}.");
         }
 
         public void OnCancellDown()
@@ -408,7 +408,7 @@ namespace knoxxr.Evelvator.Sim
             DirectionEventArgs args = new DirectionEventArgs(Direction.Down);
             EventCancelDown?.Invoke(this, args);
 
-            //Console.WriteLine($"Person {Id} canceled DOWN request at Floor {_curFloor.FloorNo}.");
+            Logger.Info($"Person {Id} canceled DOWN request at Floor {_curFloor.FloorNo}.");
         }
 
         public void OnReqButton(Floor targetFloor)
@@ -416,14 +416,14 @@ namespace knoxxr.Evelvator.Sim
             ButtonEventArgs args = new ButtonEventArgs(targetFloor);
             EventReqButton?.Invoke(this, args);
 
-            //Console.WriteLine($"Person {Id} pressed button for Floor {targetFloor.FloorNo} inside the elevator.");
+            Logger.Info($"Person {Id} pressed button for Floor {targetFloor.FloorNo} inside the elevator.");
         }
         public void OnCancelButton(Floor targetFloor)
         {
             ButtonEventArgs args = new ButtonEventArgs(targetFloor);
             EventCancelButton?.Invoke(this, args);
 
-            //Console.WriteLine($"Person {Id} canceled button for Floor {targetFloor.FloorNo} inside the elevator.");
+            Logger.Info($"Person {Id} canceled button for Floor {targetFloor.FloorNo} inside the elevator.");
         }
     }
 

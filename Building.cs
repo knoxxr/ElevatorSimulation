@@ -46,7 +46,7 @@ namespace knoxxr.Evelvator.Core
                 _floors.Add(newFloor.FloorNo, newFloor);
             }
 
-            //Console.WriteLine($"Floors initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
+            Logger.Info($"Floors initialized with {TotalGroundFloor} ground floors and {TotalUndergroundFloor} underground floors.");
         }
 
         protected void InitElevatorManager()

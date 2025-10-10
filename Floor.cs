@@ -44,7 +44,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                //Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
+                Logger.Info($"[Floor {FloorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
             }
         }
         private void Elevator_OnDoorOpened(object sender, EventArgs e)
@@ -52,7 +52,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                //Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                Logger.Info($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
             }
         }
         private void Elevator_OnDoorClosed(object sender, EventArgs e)
@@ -60,7 +60,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                //Console.WriteLine($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                Logger.Info($"[Floor {FloorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
             }
         }
 
@@ -68,7 +68,7 @@ namespace knoxxr.Evelvator.Core
         {
             BtnUp.Press();
             OnReqUp(new FloorEventArgs(this));
-            //Console.WriteLine($"Floor {FloorNo} UP button pressed.");
+            Logger.Info($"Floor {FloorNo} UP button pressed.");
         }
 
         public void CancelUpSide()
@@ -82,42 +82,42 @@ namespace knoxxr.Evelvator.Core
         {
             BtnDown.Press();
             OnReqDown(new FloorEventArgs(this));
-            //Console.WriteLine($"Floor {FloorNo} DOWN button pressed.");
+            Logger.Info($"Floor {FloorNo} DOWN button pressed.");
         }
 
         public void CancelDownSide()
         {
             BtnDown.Cancel();
             OnCancelDown(new FloorEventArgs(this));
-            //Console.WriteLine($"Floor {FloorNo} DOWN button canceled.");
+            Logger.Info($"Floor {FloorNo} DOWN button canceled.");
         }
 
         public void OnReqUp(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventReqUp?.Invoke(this, args);
-            //Console.WriteLine($"Floor {FloorNo} UP button pressed.");
+            Logger.Info($"Floor {FloorNo} UP button pressed.");
         }
 
         public void OnReqDown(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventReqDown?.Invoke(this, args);
-            //Console.WriteLine($"Floor {FloorNo} DOWN button pressed.");
+            Logger.Info($"Floor {FloorNo} DOWN button pressed.");
         }
 
         public void OnCancelUp(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventCancelUp?.Invoke(this, args);
-            //Console.WriteLine($"Floor {FloorNo} UP button canceled.");
+            Logger.Info($"Floor {FloorNo} UP button canceled.");
         }
 
         public void OnCancelDown(FloorEventArgs e)
         {
             FloorEventArgs args = new FloorEventArgs(this);
             EventCancelDown?.Invoke(this, args);
-            //Console.WriteLine($"Floor {FloorNo} DOWN button canceled.");
+            Logger.Info($"Floor {FloorNo} DOWN button canceled.");
         }
     }
 

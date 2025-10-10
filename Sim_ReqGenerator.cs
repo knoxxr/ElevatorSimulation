@@ -40,12 +40,12 @@ namespace knoxxr.Evelvator.Sim
             {
                 try
                 {
-                    DrawConsole();
+                    //DrawConsole();
                     Thread.Sleep(500);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"오류 발생: {ex.Message}");
+                    Logger.Error($"오류 발생: {ex.Message}");
                 }
             }
         }
@@ -61,7 +61,7 @@ namespace knoxxr.Evelvator.Sim
                     Floor floor = _building._floors[GetRandomFloor()];
                     if (floor == null)
                     {
-                        //Console.WriteLine("오류: 유효하지 않은 층 선택됨.");
+                        Logger.Info("오류: 유효하지 않은 층 선택됨.");
                         continue;
                     }
                     Person newPerson = new Person(floor, _building);
@@ -69,12 +69,12 @@ namespace knoxxr.Evelvator.Sim
                     newPerson.EventRequestCompleted += OnEventRequestCompleted;
                     _people.Add(newPerson.Id, newPerson);
 
-                    //Console.WriteLine($"[생성됨] {newPerson}");
+                    Logger.Info($"[생성됨] {newPerson}");
                     Thread.Sleep(interval);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"오류 발생: {ex.Message}");
+                    Logger.Error($"오류 발생: {ex.Message}");
                 }
             }
         }
@@ -88,7 +88,7 @@ namespace knoxxr.Evelvator.Sim
             _people.Remove(person.Id);
 
             // 완료 메시지를 출력합니다.
-            //Console.WriteLine($"[완료] {person}");
+            Logger.Info($"[완료] {person}");
         }
 
         private int GetRandomFloor()
@@ -105,7 +105,7 @@ namespace knoxxr.Evelvator.Sim
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"오류 발생: {ex.Message}");
+                Logger.Error($"오류 발생: {ex.Message}");
                 floor = 1; // 기본값 설정
             }
             return floor;
@@ -153,10 +153,6 @@ namespace knoxxr.Evelvator.Sim
 
                 string editText = ReplaceNthChar(orderedText[elevator._currentFloor.FloorNo], 11 + elevator.Id, '□');
                 orderedText[elevator._currentFloor.FloorNo] = editText;
-
-                
-
-
             }
 
             foreach (Person person in _people.Values)
@@ -170,7 +166,7 @@ namespace knoxxr.Evelvator.Sim
 
             foreach (string text in orderedText.Values)
             {
-                Console.WriteLine(text);
+                Console.Write(text);
 
             }
 

@@ -1,6 +1,10 @@
 using System.Threading;
 using knoxxr.Evelvator.Core;
 using knoxxr.Evelvator.Sim;
+using log4net;
+using log4net.Config;
+using System.Reflection;
+using log4net.Repository;
 
 namespace knoxxr.Evelvator.Core
 {
@@ -12,7 +16,6 @@ namespace knoxxr.Evelvator.Core
         public Dictionary<int, Floor>? _floors = null;
         public Building? _building = null;
         private ElevatorAPI? _api = null;
-
         public ElevatorManager(Building building)
         {
             _building = building;
@@ -23,7 +26,7 @@ namespace knoxxr.Evelvator.Core
             InitElevators(totalElevator);
             InitAPI();
             InitScheuler();
-            //Console.WriteLine($"ElevatorManager initialized with {totalElevator} elevators.");
+            Logger.Info($"ElevatorManager initialized with {totalElevator} elevators.");
         }
 
         private void InitScheuler()
@@ -60,7 +63,8 @@ namespace knoxxr.Evelvator.Core
         public void RequestElevator(PersonRequest request)
         {
             _requests.Add(request);
-            //Console.WriteLine($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
+
+            Logger.Info($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
         }
         public Elevator GetNearestElevator(Floor reqFloor)
         {
@@ -84,12 +88,12 @@ namespace knoxxr.Evelvator.Core
                             }
                             else
                             {
-                                //Console.WriteLine($"[스케줄러] 요청된 {req.ReqFloor.FloorNo}층에 가장 적합한 엘리베이터가 없습니다.");
+                                Logger.Info($"[스케줄러] 요청된 {req.ReqFloor.FloorNo}층에 가장 적합한 엘리베이터가 없습니다.");
                             }
-                            //Console.WriteLine($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.ReqDirection.ToString()} 요청 감지됨.");
+                            Logger.Info($"[스케줄러] {req.ReqFloor.FloorNo}층에서 {req.ReqDirection.ToString()} 요청 감지됨.");
                             break;
                         case PersonLocation.Elevator:
-                            //Console.WriteLine($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 요청 감지됨.");
+                            Logger.Info($"[스케줄러] 엘리베이터 내부에서 {req.TargetFloor.FloorNo}층 버튼 요청 감지됨.");
                             req.ReqElevator.ExecuteCallMission(req);
                             break;
                     }

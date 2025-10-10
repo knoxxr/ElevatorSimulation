@@ -77,7 +77,7 @@ namespace knoxxr.Evelvator.Core
         public async Task Start()
         {
             listener.Start();
-            //Console.WriteLine($"서버 시작됨. {ApiPrefix}에서 수신 중...");
+            Logger.Info($"서버 시작됨. {ApiPrefix}에서 수신 중...");
 
             // 클라이언트 요청이 들어올 때까지 무한히 대기합니다.
             while (listener.IsListening)
@@ -109,7 +109,7 @@ namespace knoxxr.Evelvator.Core
             try
             {
                 string urlPath = request.Url.AbsolutePath.TrimEnd('/'); // 마지막 슬래시 제거
-                //Console.WriteLine($"-> [{request.HttpMethod}] {urlPath} 요청 수신");
+                Logger.Info($"-> [{request.HttpMethod}] {urlPath} 요청 수신");
 
                 switch (urlPath)
                 {
@@ -197,7 +197,7 @@ namespace knoxxr.Evelvator.Core
                 if (configData.BuildingFloors > 0)
                 {
                     buildingFloors = configData.BuildingFloors;
-                    //Console.WriteLine($"[Config] 층수 변경됨: {buildingFloors}층");
+                    Logger.Info($"[Config] 층수 변경됨: {buildingFloors}층");
                 }
                 if (configData.ElevatorCount >= 0)
                 {
@@ -228,7 +228,7 @@ namespace knoxxr.Evelvator.Core
                 userCall.RequestTime = DateTime.UtcNow;
                 pendingCalls.Add(userCall);
                 // TODO: eleMgr에 요청을 전달하여 엘리베이터 배차 로직 시작
-                //Console.WriteLine($"[Request] 새로운 요청 추가됨: {userCall.Floor}층, {userCall.Direction}");
+                Logger.Info($"[Request] 새로운 요청 추가됨: {userCall.Floor}층, {userCall.Direction}");
             }
 
             string jsonResponse = JsonSerializer.Serialize(userCall);
