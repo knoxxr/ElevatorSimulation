@@ -49,7 +49,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele.Id}이(가) 도착했습니다.");
+                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele._Id}이(가) 도착했습니다.");
             }
         }
         private void Elevator_OnDoorOpened(object sender, EventArgs e)
@@ -57,7 +57,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele.Id}의 문이 열렸습니다.");
+                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele._Id}의 문이 열렸습니다.");
             }
         }
         private void Elevator_OnDoorClosed(object sender, EventArgs e)
@@ -65,7 +65,7 @@ namespace knoxxr.Evelvator.Core
             Elevator ele = ((ElevatorEventArgs)e).Elevator;
             if (ele._currentFloor == this)
             {
-                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele.Id}의 문이 닫혔습니다.");
+                Logger.Info($"[Floor {_floorNo}] 엘리베이터 {ele._Id}의 문이 닫혔습니다.");
             }
         }
 

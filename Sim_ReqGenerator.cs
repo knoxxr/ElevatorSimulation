@@ -68,7 +68,7 @@ namespace knoxxr.Evelvator.Sim
                     Person newPerson = new Person(floor, _building);
 
                     newPerson.EventRequestCompleted += OnEventRequestCompleted;
-                    _people.Add(newPerson.Id, newPerson);
+                    _people.Add(newPerson._Id, newPerson);
 
                     Logger.Info($"[생성됨] {newPerson}");
                     Thread.Sleep(interval);
@@ -86,7 +86,7 @@ namespace knoxxr.Evelvator.Sim
             Person person = (Person)sender;
             person.EventRequestCompleted -= OnEventRequestCompleted;
             // People 컬렉션에서 해당 Person 객체를 제거합니다.
-            _people.Remove(person.Id);
+            _people.Remove(person._Id);
 
             // 완료 메시지를 출력합니다.
             Logger.Info($"[완료] {person}");
@@ -123,17 +123,17 @@ namespace knoxxr.Evelvator.Sim
 
             foreach (Elevator elevator in _building._eleMgr._elevators.Values)
             {
-                string eleText = String.Format($" <E{elevator.Id}>: ");
+                string eleText = String.Format($" <E{elevator._Id}>: ");
                 Console.Write(eleText);
                 foreach (Person person in elevator._people)
                 {
-                    Console.Write(string.Format($"(P{person.Id}): "));
+                    Console.Write(string.Format($"(P{person._Id}): "));
                 }
             }
             Console.WriteLine();
             foreach (Person person in _people.Values)
             {
-                string personText = String.Format($" <P{person.Id}>: ");
+                string personText = String.Format($" <P{person._Id}>: ");
                 Console.Write(personText);
 
                 if(person._curRequest != null)
@@ -152,7 +152,7 @@ namespace knoxxr.Evelvator.Sim
             foreach (Elevator elevator in _building._eleMgr._elevators.Values)
             {
 
-                string editText = ReplaceNthChar(orderedText[elevator._currentFloor.FloorNo], 11 + elevator.Id, '□');
+                string editText = ReplaceNthChar(orderedText[elevator._currentFloor.FloorNo], 11 + elevator._Id, '□');
                 orderedText[elevator._currentFloor.FloorNo] = editText;
             }
 
@@ -160,7 +160,7 @@ namespace knoxxr.Evelvator.Sim
             {
                 if (person._location == PersonLocation.Floor)
                 {
-                    orderedText[person._curFloor.FloorNo] += string.Format($"(P{person.Id})");
+                    orderedText[person._curFloor.FloorNo] += string.Format($"(P{person._Id})");
 
                 }
             }

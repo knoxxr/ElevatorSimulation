@@ -5,9 +5,9 @@ namespace knoxxr.Evelvator.Core
 {
     public class Building
     {
-        public static int TotalGroundFloor = 10;
-        public static int TotalUndergroundFloor = 3;
-        protected int TotalElevator = 2;
+        public static int TotalGroundFloor = 20;
+        public static int TotalUndergroundFloor = 4;
+        protected int TotalElevator = 3;
         public Dictionary<int, Floor> _floors = new Dictionary<int, Floor>();
         public ElevatorManager _eleMgr = null;
         public Sim_ReqGenerator _simMgr = null;

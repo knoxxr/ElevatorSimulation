@@ -41,7 +41,7 @@ namespace knoxxr.Evelvator.Core
             for (int eleNo = 1; eleNo <= totalElevator; eleNo++)
             {
                 Elevator newElevator = new Elevator(eleNo, _building);
-                _elevators.Add(newElevator.Id, newElevator);
+                _elevators.Add(newElevator._Id, newElevator);
             }
         }
         private void InitAPI()
@@ -64,7 +64,7 @@ namespace knoxxr.Evelvator.Core
         {
             _requests.Add(request);
 
-            Logger.Info($"Person {request.ReqPerson.Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
+            Logger.Info($"Person {request.ReqPerson._Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
         }
         public Elevator GetNearestElevator(Floor reqFloor)
         {
