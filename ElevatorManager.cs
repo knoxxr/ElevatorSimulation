@@ -62,7 +62,10 @@ namespace knoxxr.Evelvator.Core
         }
         public void RequestElevator(PersonRequest request)
         {
-            _requests.Add(request);
+            lock (_requests)
+            {
+                _requests.Add(request);
+            }
 
             Logger.Info($"Person {request.ReqPerson._Id} requested elevator to floor {request.TargetFloor.FloorNo}.");
         }

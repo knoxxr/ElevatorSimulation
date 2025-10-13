@@ -277,7 +277,10 @@ namespace knoxxr.Evelvator.Sim
                     ReqDirection = dir,
                     ReqLocation = PersonLocation.Floor
                 };
-                _curRequest = newreq;
+                //lock (_curRequest)
+                {
+                    _curRequest = newreq;
+                }
                 Logger.Info($"Person {_Id} is creating request on floor : {newreq}");
                 _elevatorManager.RequestElevator(newreq);
             }

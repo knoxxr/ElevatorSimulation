@@ -36,8 +36,8 @@ namespace knoxxr.Evelvator.Core
 
         // 가정: Elevator 클래스 내부에 정의됩니다.
         // 문이 열리는 데 걸리는 시간 (ms)
-        private const int DoorOperationTimeMs = 2000;
-        private const int DoorOpenWaitTimeMs = 3000;
+        public int DoorOperationTimeMs = 2000;
+        public int DoorOpenWaitTimeMs = 3000;
 
         // === 설정 변수 ===
         private const double MaxSpeed = 20000.0; // 최대 속도 (mm/s)
