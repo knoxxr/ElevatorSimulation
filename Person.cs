@@ -121,7 +121,7 @@ namespace knoxxr.Evelvator.Sim
                 Logger.Info($"[Person {_Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele._Id}이(가) 도착했습니다.");
                 ChangePersonState(PersonState.CheckArrivedElevatorAtCurrentFloor);
             }
-            else if (_state == PersonState.InElevator && ele._currentFloor.FloorNo == _targetFloor.FloorNo)
+            else if (_state == PersonState.InElevator && _targetFloor != null && ele._currentFloor.FloorNo == _targetFloor.FloorNo)
             {
                 Logger.Info($"[Person {_Id} at Floor {_curFloor.FloorNo}] 엘리베이터 {ele._Id}이(가) 목적지에 도착했습니다.");
                 ChangePersonState(PersonState.CheckDestinationReached);
@@ -168,11 +168,12 @@ namespace knoxxr.Evelvator.Sim
         {
             foreach (var ele in _elevatorManager._elevators.Values)
             {
-                if (ele._currentFloor != null
+                if (ele._currentFloor != null && ele.IsOpen
                 && ele._currentFloor.FloorNo == _curFloor.FloorNo
                 && (ele.State == ElevatorState.DoorOpened
                 || ele.State == ElevatorState.DoorWaiting)
-                && ele.IsMaximumOccupancy() == false)
+                && ele.IsMaximumOccupancy() == false
+                )
                 {
                     return ele;
                 }
@@ -210,7 +211,10 @@ namespace knoxxr.Evelvator.Sim
                         ChangePersonState(PersonState.InElevator);
                         break;
                     case PersonState.InElevator:
-                        PressButton(_curRequest);
+                        lock (_requestLock)
+                        {
+                            PressButton(_curRequest);
+                        }
                         ChangePersonState(PersonState.CheckDestinationReached);
                         break;
                     case PersonState.CheckDestinationReached:
@@ -258,6 +262,8 @@ namespace knoxxr.Evelvator.Sim
             }
         }
 
+        // Person 클래스 내 멤버 변수 추가
+        private readonly object _requestLock = new object();
         protected void CrateFloorRequest()
         {
             int target = MakeTargetFloor(_curFloor);
@@ -267,6 +273,11 @@ namespace knoxxr.Evelvator.Sim
             try
             {
                 _targetFloor = _building._floors[target];
+
+                if(_targetFloor == null)
+                {
+
+                }
                 //_targetFloor = _building._floors[MakeTargetFloor(_curFloor)];
                 Direction dir = (_targetFloor.FloorNo > _curFloor.FloorNo) ? Direction.Up : Direction.Down;
                 PersonRequest newreq = new PersonRequest()
@@ -277,7 +288,8 @@ namespace knoxxr.Evelvator.Sim
                     ReqDirection = dir,
                     ReqLocation = PersonLocation.Floor
                 };
-                //lock (_curRequest)
+                // 💡 동기화 블록 추가: 이 부분은 한 번에 하나의 스레드만 실행할 수 있습니다.
+                lock (_requestLock)
                 {
                     _curRequest = newreq;
                 }
@@ -292,16 +304,26 @@ namespace knoxxr.Evelvator.Sim
 
         protected void CrateElevatorRequest()
         {
-            _curRequest.ReqElevator = _currentElevator;
-            _curRequest.ReqLocation = PersonLocation.Elevator;
+            // 💡 _curRequest 읽기/쓰기 접근을 동일한 lock 객체로 보호
+            lock (_requestLock)
+            {
+                // 널 체크 추가: _curRequest가 null인 경우를 대비하여 방어 코드 삽입
+                if (_curRequest == null)
+                {
+                    Logger.Warn($"Person {_Id} attempted to create elevator request but _curRequest is null.");
+                    return;
+                }
+                _curRequest.ReqElevator = _currentElevator;
+                _curRequest.ReqLocation = PersonLocation.Elevator;
 
-            Logger.Info($"Person {_Id} is renewal request on elevator : {_curRequest}");
-            _elevatorManager.RequestElevator(_curRequest);
+                Logger.Info($"Person {_Id} is renewal request on elevator : {_curRequest}");
+                _elevatorManager.RequestElevator(_curRequest);
+            }
         }
 
         protected bool CheckArrivedonTargetFloor()
         {
-            if (_curFloor.FloorNo == _curRequest.TargetFloor.FloorNo)
+            if (_curFloor.FloorNo == _curRequest.TargetFloor.FloorNo && _currentElevator.IsOpen)
             {
                 Logger.Info($"Person {_Id} has arrived at the target floor {_curFloor.FloorNo}.");
                 return true;
@@ -395,8 +417,10 @@ namespace knoxxr.Evelvator.Sim
         public void GetOutElevator()
         {
             ChangePersonState(PersonState.GetOut);
-            _currentElevator.RemovePerson(this);
+            ChangeLocation(PersonLocation.Floor);
             OnGeOffElevator();
+            Thread.Sleep(1000);
+            _currentElevator.RemovePerson(this);
         }
         protected void ChangeCurrentElevator(Elevator newElevator)
         {
@@ -405,9 +429,13 @@ namespace knoxxr.Evelvator.Sim
         public void PressButton(PersonRequest req)
         {
             Thread.Sleep(ButtonPressDelayMs); // Simulate delay before pressing the button
-            CrateElevatorRequest();
-            //selectedElevator.ReqButton(targetFloor);
-            OnReqButton(req.TargetFloor);
+
+            lock (_requestLock)
+            {
+                CrateElevatorRequest();
+                //selectedElevator.ReqButton(targetFloor);
+                OnReqButton(req.TargetFloor);
+            }
         }
         public void CancelButton(Floor targetFloor)
         {

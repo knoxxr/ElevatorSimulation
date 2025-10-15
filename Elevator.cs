@@ -53,6 +53,12 @@ namespace knoxxr.Evelvator.Core
         public List<Person> _people = new List<Person>();
         protected List<Button> Buttons = new List<Button>();
         public Direction CurrentDirection = Direction.None;
+        private bool _isOpen = false;
+        public bool IsOpen
+        {
+            get
+            {  return _isOpen; }
+        }
 
         public Building _building;
 
@@ -309,7 +315,7 @@ namespace knoxxr.Evelvator.Core
 
             Logger.Info($"[ID {_Id}] 문 열림 시작...");
             ChangeElevatorState(ElevatorState.DoorOpenningStarting);
-            await Task.Delay(100);
+            await Task.Delay(10);
 
             // 문 열림 시뮬레이션
             ChangeElevatorState(ElevatorState.DoorOpening);
@@ -319,6 +325,7 @@ namespace knoxxr.Evelvator.Core
             Logger.Info($"[ID {_Id}] 문 열림 완료 (현재 층: {_currentFloor.FloorNo}).");
             ChangeElevatorState(ElevatorState.DoorOpened);
             OnDoorOpened(new ElevatorEventArgs(this));
+            _isOpen = true;
         }
 
         public async Task OpenDoorWaitAsync()
@@ -327,7 +334,7 @@ namespace knoxxr.Evelvator.Core
 
             Logger.Info($"[ID {_Id}] 문 열린후 대기 시작...");
             ChangeElevatorState(ElevatorState.DoorWaitingFinish);
-            await Task.Delay(100);
+            await Task.Delay(10);
 
             // 문 열림 시뮬레이션
             ChangeElevatorState(ElevatorState.DoorWaiting);
@@ -357,6 +364,7 @@ namespace knoxxr.Evelvator.Core
             Logger.Info($"[ID {_Id}] 문 닫힘 완료.");
             ChangeElevatorState(ElevatorState.DoorClosed);
             OnDoorClosed(new ElevatorEventArgs(this));
+            _isOpen = false;
         }
 
         protected void ChangeDirectionState(Direction dir)
